@@ -461,10 +461,10 @@ class ADHDSimulator:
             'second_half_avg': second_avg
         }
     
-    def _diagnose_adhd(self, attention_results: Dict,
-                       impulsivity_results: Dict,
-                       hyperactivity_results: Dict) -> Dict:
-        """ADHD 종합 진단"""
+    def _assess_adhd_patterns(self, attention_results: Dict,
+                              impulsivity_results: Dict,
+                              hyperactivity_results: Dict) -> Dict:
+        """ADHD 동역학 패턴 평가 (시뮬레이션 기반)"""
         # 점수 정규화
         attention_score = attention_results.get('decline_rate', 0.0)
         if attention_score > 0.3:
@@ -481,23 +481,23 @@ class ADHDSimulator:
             energy_mismatch / 50.0 * 0.5     # 불일치 기여도 50%
         ))
         
-        # 진단 기준
+        # 패턴 평가 기준 (시뮬레이션 기반)
         if (attention_deficit > 0.7 and
             (impulsivity_score > 0.6 or hyperactivity_score > 0.6)):
-            diagnosis = 'ADHD 가능성 높음'
-            confidence = 0.8
+            assessment = 'ADHD-like dynamics strongly observed'
+            confidence = 0.80
         elif attention_deficit > 0.7:
-            diagnosis = '주의력 결핍 가능성'
-            confidence = 0.6
+            assessment = 'Attention deficit pattern observed'
+            confidence = 0.60
         elif impulsivity_score > 0.7 or hyperactivity_score > 0.7:
-            diagnosis = '충동성/과잉행동 가능성'
-            confidence = 0.5
+            assessment = 'Impulsivity/Hyperactivity pattern observed'
+            confidence = 0.50
         else:
-            diagnosis = '정상 범위'
-            confidence = 0.9
+            assessment = 'Normal range dynamics'
+            confidence = 0.90
         
         return {
-            'diagnosis': diagnosis,
+            'assessment': assessment,
             'confidence': confidence,
             'scores': {
                 'attention_deficit': attention_deficit,
