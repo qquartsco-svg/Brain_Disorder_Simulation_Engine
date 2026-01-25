@@ -35,8 +35,19 @@ ADHD Simulation Engine은 Cookiie Brain Engine의 동역학적 상호작용을 �
 ### 2. 시뮬레이션 시나리오
 
 - **주의력 지속 테스트**: 30초간 주의력 유지 능력 측정
+  - 작업 중요도 기반 주의력 계산
+  - 시간에 따른 주의력 감소 모델링
+  - ADHD 패턴 감지
+  
 - **충동성 테스트**: 4가지 시나리오에서 즉각적 vs 지연된 보상 선택
+  - 할인율(discount rate) 기반 선택 모델
+  - 충동성 점수 계산
+  - ADHD 패턴 감지
+  
 - **과잉행동 테스트**: 10초간 에너지 변동성 측정
+  - 에너지 불일치 분석
+  - 에너지 변동성 계산
+  - ADHD 패턴 감지
 
 ### 3. 동역학적 상호작용
 
@@ -49,20 +60,33 @@ ADHD Simulation Engine은 Cookiie Brain Engine의 동역학적 상호작용을 �
 
 ## 🚀 빠른 시작
 
-### 설치
+### 사전 요구사항
 
-```bash
-# 저장소 클론
-git clone https://github.com/qquartsco-svg/adhd_simulation_engine.git
-cd adhd_simulation_engine
+1. **Cookiie Brain Engine 설치**:
+   ```bash
+   git clone https://github.com/qquartsco-svg/cookiieBrain_alpha.git
+   cd cookiieBrain_alpha
+   # Cookiie Brain Engine 설치 방법 참조
+   ```
 
-# 의존성 설치
-pip install -r requirements.txt
-```
+2. **ADHD Simulation Engine 설치**:
+   ```bash
+   # 저장소 클론
+   git clone https://github.com/qquartsco-svg/adhd_simulation_engine.git
+   cd adhd_simulation_engine
+
+   # 의존성 설치
+   pip install -r requirements.txt
+   ```
 
 ### 기본 실행
 
 ```bash
+# Cookiie Brain Engine이 상위 디렉토리에 있는 경우
+python3 adhd_simulator.py
+
+# 또는 환경 변수로 경로 지정
+export COOKIIE_BRAIN_PATH=/path/to/Cookiie_Brain_Engine
 python3 adhd_simulator.py
 ```
 
@@ -155,18 +179,44 @@ ADHD_Simulation_Engine/
 ├── __init__.py              # 모듈 초기화
 ├── README.md                # 이 파일
 ├── requirements.txt         # 의존성 목록
-├── LICENSE                  # 라이선스
-└── .gitignore              # Git 무시 파일
+├── LICENSE                  # MIT 라이선스
+├── .gitignore              # Git 무시 파일
+└── PHAM_BLOCKCHAIN_SIGNATURE.md  # PHAM 서명
 ```
 
 ---
 
 ## 📦 의존성
 
-- Python 3.8+
-- numpy
-- matplotlib
-- Cookiie Brain Engine (의존성)
+### 필수 의존성
+
+- **Python 3.8+**
+- **numpy** >= 1.20.0
+- **matplotlib** >= 3.3.0
+- **Cookiie Brain Engine**: 별도 설치 필요
+  - 설치 방법: [Cookiie Brain Engine](https://github.com/qquartsco-svg/cookiieBrain_alpha)
+
+### 선택적 의존성
+
+- **scipy** >= 1.7.0 (고급 수치 계산)
+- **pandas** >= 1.3.0 (데이터 분석)
+
+### Cookiie Brain Engine 경로 설정
+
+ADHD Simulation Engine은 Cookiie Brain Engine에 의존합니다. 다음 방법 중 하나로 경로를 설정할 수 있습니다:
+
+1. **기본 경로** (자동 감지):
+   - 상위 디렉토리의 `Cookiie_Brain_Engine` 폴더를 자동으로 찾습니다
+   - 예: `ADHD_Simulation_Engine/../Cookiie_Brain_Engine/`
+
+2. **환경 변수로 지정**:
+   ```bash
+   export COOKIIE_BRAIN_PATH=/path/to/Cookiie_Brain_Engine
+   python3 adhd_simulator.py
+   ```
+
+3. **코드에서 직접 수정**:
+   `adhd_simulator.py` 파일의 경로 설정 부분을 수정하세요.
 
 ---
 
@@ -248,9 +298,10 @@ hyperactivity_results = simulator.simulate_hyperactivity_task(
 
 ## 📚 참고 자료
 
-- [Cookiie Brain Engine](https://github.com/qquartsco-svg/cookiieBrain_alpha): 기본 엔진
-- ADHD 적용 분석 문서
-- ADHD 확장 구조 문서
+- **[Cookiie Brain Engine](https://github.com/qquartsco-svg/cookiieBrain_alpha)**: 기본 엔진 (필수 의존성)
+- **Cookiie Brain Engine 문서**:
+  - [ADHD 적용 분석](https://github.com/qquartsco-svg/cookiieBrain_alpha/blob/main/docs/concepts/ADHD_APPLICATION_ANALYSIS.md)
+  - [의료용 확장 로드맵](https://github.com/qquartsco-svg/cookiieBrain_alpha/blob/main/docs/medical/CLINICAL_ENGINE_ROADMAP.md)
 
 ---
 
