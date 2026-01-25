@@ -1,0 +1,15 @@
+include README.md
+include LICENSE
+include requirements.txt
+include PHAM_BLOCKCHAIN_SIGNATURE.md
+include .gitignore
+recursive-include *.md
+recursive-include *.txt
+recursive-include *.json
+recursive-include *.yaml
+recursive-include *.yml
+exclude *.pyc
+exclude __pycache__
+exclude .git
+exclude .DS_Store
+

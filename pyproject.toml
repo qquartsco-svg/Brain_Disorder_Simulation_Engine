@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "adhd-simulation-engine"
+version = "1.0.0"
+description = "Cookiie Brain Engine 기반 ADHD 전용 시뮬레이션 시스템"
+readme = "README.md"
+requires-python = ">=3.8"
+license = "MIT"
+authors = [
+    {name = "GNJz"}
+]
+keywords = ["adhd", "simulation", "cognitive", "neuroscience", "research", "education"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Education",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "numpy>=1.20.0",
+    "matplotlib>=3.3.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "flake8>=6.0.0",
+]
+full = [
+    "scipy>=1.7.0",
+    "pandas>=1.3.0",
+]
+
+[project.scripts]
+adhd-simulate = "cli:main"
+
+[project.urls]
+Homepage = "https://github.com/qquartsco-svg/ADHD_Simulation_Engine"
+Documentation = "https://github.com/qquartsco-svg/ADHD_Simulation_Engine#readme"
+Repository = "https://github.com/qquartsco-svg/ADHD_Simulation_Engine"
+"Bug Reports" = "https://github.com/qquartsco-svg/ADHD_Simulation_Engine/issues"
+
+[tool.setuptools]
+# packages는 자동으로 찾도록 함
+
+[tool.setuptools.package-data]
+"*" = ["*.md", "*.txt", "*.json", "*.yaml", "*.yml"]
+

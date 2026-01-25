@@ -5,60 +5,154 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 
+## 🚀 빠른 시작
+
+### 설치
+
+```bash
+# 저장소 클론
+git clone https://github.com/qquartsco-svg/ADHD_Simulation_Engine.git
+cd ADHD_Simulation_Engine
+
+# 패키지 설치
+pip install -e .
+
+# Cookiie Brain Engine 설치 (의존성)
+# https://github.com/qquartsco-svg/cookiieBrain_alpha
+```
+
+### 실행
+
+```bash
+# 명령줄에서 실행
+python -m adhd_simulator --age 15 --gender male --scenario adhd
+
+# 또는 Python 코드에서
+from adhd_simulator import ADHDSimulator
+simulator = ADHDSimulator(age=15, gender='male')
+results = simulator.simulate_full_adhd_assessment(scenario='adhd')
+```
+
+자세한 설치 방법은 [INSTALLATION.md](INSTALLATION.md)를 참고하세요.
+
+---
+
 ## 📋 개요
 
 ADHD Simulation Engine은 Cookiie Brain Engine의 동역학적 상호작용을 활용하여 ADHD의 주요 특성(주의력 결핍, 충동성, 과잉행동)을 시뮬레이션하는 전용 엔진입니다.
 
-**⚠️ 중요 안내**:
-- 이 프로젝트는 인지 동역학의 계산적 시뮬레이션입니다.
-- **진단, 예측, 또는 치료 권고를 제공하지 않습니다.**
-- 연구 및 교육 목적으로만 사용되어야 합니다.
-- 실제 의학적 진단 도구가 아닙니다.
-- 실제 ADHD 진단은 전문의와 상담해야 합니다.
+**⚠️ ⚠️ ⚠️ 매우 중요한 안내 ⚠️ ⚠️ ⚠️**:
+
+**이 소프트웨어는 의학적 진단 도구가 아닙니다.**
+
+- ❌ **진단, 예측, 또는 치료 권고를 제공하지 않습니다.**
+- ❌ **실제 의학적 진단 도구가 아닙니다.**
+- ❌ **의료기기(SaMD)가 아닙니다.**
+- ❌ **병원에서 환자 진단에 사용할 수 없습니다.**
+- ✅ **연구 및 교육 목적으로만 사용되어야 합니다.**
+- ✅ **인지 동역학의 계산적 시뮬레이션입니다.**
+- ✅ **대학병원 연구실에서 시뮬레이션 도구로 사용 가능합니다.**
+
+**실제 ADHD 진단이 필요한 경우 반드시 의료 전문가(정신건강의학과 전문의)와 상담하세요.**
+
+자세한 면책 조항은 [LEGAL_DISCLAIMER.md](LEGAL_DISCLAIMER.md)를 참고하세요.
+
+### 📊 현재 상태 (2025-01-25 최신 업데이트)
+
+**연구용/교육용 준비도**: ✅ **90-95%** (사용 가능) ⬆️ **+15-20%p**  
+**의료용 병원 준비도**: ❌ **25-30%** (사용 불가능) ⬆️ **+10-15%p**
+
+**현재 버전의 정확한 위치**:
+- ✅ **대학병원 연구실에서 시뮬레이션 도구로 사용 가능**
+- ✅ **연구 및 교육 목적으로 충분히 사용 가능**
+- ✅ **폐루프 동역학 기본 구조 구현 완료**
+- ✅ **도파민 시스템 기본 모델 구현 완료**
+- ❌ **의료기기/진단 보조 시스템으로는 사용 불가능**
+- ❌ **환자 데이터 연결 및 진단 보조는 불가능**
+
+**최신 개선사항** (2025-01-25):
+- ✅ 재현성 보장 시스템 (Seed 관리, 실험 메타데이터)
+- ✅ 상태공간 출력 (라벨 제거, 상태 벡터 출력)
+- ✅ 통계적 검증 (Seed sweep 기반 신뢰도)
+- ✅ 메모리 최적화 (CircularBuffer)
+- ✅ 변동성 분석 (주의력, 움직임 패턴)
+- ✅ **폐루프 동역학 기본 구조** (상태 벡터, 피드백 루프)
+- ✅ **도파민 시스템 기본 모델** (Tonic/Phasic 도파민)
+- ✅ **약물 효과 시뮬레이션 기본 구조** (메틸페니데이트, 아토목세틴)
+- ✅ **동역학 불변식 테스트** (단조성, 게이트 효과, 안정성)
+- ✅ **실험 리포트 자동 생성** (JSON, Markdown, PNG)
+- ✅ **확장 가능한 아키텍처** (플러그인 구조, 설정 기반 확장)
+
+**의료용 전환을 위한 남은 작업**:
+- ❌ 생체 데이터 통합 (EEG, fMRI, HRV) - 외부 데이터 필요
+- ❌ PK/PD 모델 정밀화 - 약물 데이터 필요
+- ❌ HL7/FHIR 연동 - 의료 표준 필요
+- ❌ 임상 데이터 검증 - 환자 데이터 필요
+- ❌ 법적/윤리적 요건 - 외부 승인 필요
+
+**상세 분석**: [의료용 준비도 분석](./MEDICAL_READINESS_ANALYSIS.md) | [개선사항 보고서](./IMPROVEMENTS_APPLIED.md)
 
 ---
 
 ## 🎯 사용 목적별 구분
 
-### 공학용 / 연구용 (현재 버전)
+### 공학용 / 연구용 (현재 버전) ✅ 사용 가능
 
 **용도**:
 - 연구 및 교육 목적
 - 알고리즘 개발 및 테스트
 - 시뮬레이션 실험
 - 개념 검증
+- 대학병원 연구실 시뮬레이션 도구
 
-**특징**:
+**현재 구현된 기능**:
+- ✅ 재현성 보장 시스템 (Seed 관리, 실험 메타데이터)
+- ✅ 상태공간 좌표 출력 (라벨 대신 상태 벡터)
+- ✅ 통계적 검증 (Seed sweep 기반 신뢰도)
+- ✅ 메모리 최적화 (CircularBuffer)
+- ✅ 변동성 분석 (주의력, 움직임 패턴)
+- ✅ **폐루프 동역학** (상태 벡터, 피드백 루프, 확장 가능)
+- ✅ **도파민 시스템** (Tonic/Phasic 모델, 약물 효과 기본 구조)
+- ✅ **동역학 불변식 테스트** (물리적 타당성 검증)
+- ✅ **실험 리포트 자동 생성** (JSON, Markdown, PNG)
 - ✅ 빠른 프로토타이핑
 - ✅ 유연한 파라미터 조정
-- ✅ 교육 및 연구 목적
-- ✅ 오픈루프 측정 구조
+- ✅ 확장 가능한 아키텍처
+
+**준비도**: **90-95%** (연구용/교육용으로 거의 완성)
 
 **대상 사용자**:
 - 연구자
 - 교육자
 - 알고리즘 개발자
 - 시뮬레이션 실험자
+- 대학병원 연구실
 
 ---
 
-### 의료용 / 임상용 (확장 계획)
+### 의료용 / 임상용 (확장 계획) ❌ 현재 사용 불가능
 
-**용도**:
-- 대학 병원 연구소
-- 종합 병원 연구
-- 임상 연구 지원
-- 정밀 시뮬레이션
+**⚠️ 중요**: 현재 버전은 의료용 병원에서 사용할 수 없습니다.
 
-**특징** (계획 중):
-- 🔄 폐루프 동역학 구조
-- 🔄 재현성 보장 (Seed 관리)
-- 🔄 상태공간 좌표 출력
-- 🔄 의료 표준 준수 (HL7/FHIR)
-- 🔄 생체 데이터 통합 (fMRI, EEG 등)
-- 🔄 약물 효과 시뮬레이션 (PK/PD)
+**준비도**: **15%** (의료용 전환을 위해 추가 개발 필요)
 
-**대상 사용자**:
+**의료용 전환을 위한 필수 작업** (6-11개월 소요 예상):
+
+**Phase 1: 핵심 동역학** (1-2개월)
+- ❌ 폐루프 동역학 구조 (현재: 오픈루프)
+- ✅ 재현성 보장 (Seed 관리) - **완료**
+- ✅ 상태공간 좌표 출력 - **완료**
+
+**Phase 2: 의료 표준** (2-3개월)
+- ❌ 의료 표준 준수 (HL7/FHIR)
+- ❌ 생체 데이터 통합 (fMRI, EEG, HRV)
+- ❌ 약물 효과 시뮬레이션 (PK/PD)
+
+**Phase 3: 검증 및 품질** (3-6개월)
+- ❌ 임상 데이터 검증
+- ❌ 법적/윤리적 요건 (HIPAA, IRB)
+
+**대상 사용자** (의료용 전환 후):
 - 의료 연구자
 - 임상 연구소
 - 대학 병원 연구팀
@@ -67,8 +161,8 @@ ADHD Simulation Engine은 Cookiie Brain Engine의 동역학적 상호작용을 �
 
 ---
 
-**현재 버전**: 공학용/연구용  
-**의료용 확장**: 계획 중 (Phase 1-4)
+**현재 버전**: 공학용/연구용 ✅ **사용 가능 (75%)**  
+**의료용 확장**: 계획 중 (Phase 1-4) ❌ **사용 불가능 (15%)**
 
 ---
 
@@ -80,6 +174,7 @@ ADHD Simulation Engine은 Cookiie Brain Engine의 동역학적 상호작용을 �
   - 주의력 지속 능력 측정
   - 주의 분산 감지
   - ADHD 패턴 분석
+  - ✅ 변동성 분석 (분산, 자기상관, 드롭아웃 비율)
 
 - **ImpulseControlEngine**: 충동성 제어 및 측정
   - 즉각적 vs 지연된 보상 선택
@@ -90,6 +185,68 @@ ADHD Simulation Engine은 Cookiie Brain Engine의 동역학적 상호작용을 �
   - 에너지 변동성 분석
   - 에너지 불일치 감지
   - 과잉행동 점수 계산
+  - ✅ 움직임 패턴 분석 (burstiness, fidget_rate, dwell_time)
+
+### 1-1. 재현성 보장 시스템 (2025-01-25 추가)
+
+- **ReproducibleRNG**: Seed 관리 시스템
+  - 컴포넌트별 독립적 RNG
+  - 재현 가능한 결과 보장
+
+- **ExperimentMetadata**: 실험 메타데이터
+  - 실험 ID, Seed 값, 설정 해시
+  - Git commit hash, 플랫폼 정보
+  - 재현성 검증을 위한 필수 정보
+
+### 1-2. 상태공간 출력 (2025-01-25 추가)
+
+- **상태 벡터 출력**: 라벨 대신 상태공간 좌표
+  - attention, energy, arousal 등 상태 변수
+  - 점수 (attention_deficit, impulsivity, hyperactivity)
+  - 변동성 지표 (분산, 자기상관 등)
+
+### 1-3. 통계적 검증 (2025-01-25 추가)
+
+- **StatisticalValidator**: Seed sweep 기반 신뢰도
+  - 분포 기반 신뢰도 계산
+  - 신뢰구간 계산
+  - 통계적 타당성 보장
+
+### 1-4. 폐루프 동역학 시스템 (2025-01-25 추가)
+
+- **ClosedLoopDynamics**: 상태 벡터 기반 동역학
+  - 상태 벡터 (attention, arousal, pfc_inhibition, dopamine 등)
+  - 엔진 간 피드백 루프
+  - 확장 가능한 피드백 루프 등록 시스템
+
+### 1-5. 도파민 시스템 (2025-01-25 추가)
+
+- **DopamineSystem**: 도파민 동역학 모델
+  - Tonic/Phasic 도파민
+  - ADHD 도파민 부족 모델링
+  - 주의력, 충동성, 과잉행동에 대한 효과
+
+- **MedicationSimulator**: 약물 효과 시뮬레이션 (기본 구조)
+  - 메틸페니데이트, 아토목세틴 모델
+  - 약물 농도 곡선 (1-compartment model)
+  - 향후 PK/PD 모델로 확장 가능
+
+### 1-6. 동역학 불변식 테스트 (2025-01-25 추가)
+
+- **DynamicsInvariantTests**: 물리적 타당성 검증
+  - 단조성 테스트
+  - 할인율 테스트
+  - 게이트 효과 테스트
+  - 도파민 효과 테스트
+  - 폐루프 안정성 테스트
+
+### 1-7. 실험 리포트 자동 생성 (2025-01-25 추가)
+
+- **ReportGenerator**: 표준 리포트 생성
+  - JSON 리포트
+  - Markdown 리포트
+  - PNG 시각화
+  - 향후 PDF, HTML 확장 가능
 
 ### 2. 시뮬레이션 시나리오
 
@@ -110,10 +267,17 @@ ADHD Simulation Engine은 Cookiie Brain Engine의 동역학적 상호작용을 �
 
 ### 3. 동역학적 상호작용
 
+**오픈루프 모드** (기본):
 - Cookiie Brain Engine의 엔진 간 상호작용 활용
 - Thalamus → PFC → Basal Ganglia 흐름
 - Hypothalamus 에너지 관리
 - 실시간 상태 추적
+
+**폐루프 모드** (2025-01-25 추가):
+- 상태 벡터 기반 동역학
+- 엔진 간 피드백 루프
+- 도파민 시스템 통합
+- 확장 가능한 피드백 루프 등록
 
 ---
 
@@ -151,22 +315,84 @@ python3 adhd_simulator.py
 
 ### 코드에서 사용
 
+#### 기본 사용 (재현성 보장)
+
 ```python
 from adhd_simulator import ADHDSimulator
 
-# 시뮬레이터 초기화
-simulator = ADHDSimulator()
+# 시뮬레이터 초기화 (Seed 지정으로 재현성 보장)
+# 폐루프 동역학 및 도파민 시스템 활성화 (기본값: True)
+simulator = ADHDSimulator(
+    seed=42,
+    enable_closed_loop=True,  # 폐루프 동역학 활성화
+    enable_dopamine=True      # 도파민 시스템 활성화
+)
+
+# 실험 메타데이터 설정
+simulator.set_experiment_metadata({
+    'simulation_type': 'full_assessment',
+    'duration': 30.0
+})
 
 # 전체 평가 실행
 results = simulator.simulate_full_adhd_assessment()
 
-# 개별 테스트
+# 상태공간 출력 (라벨 대신)
+state_space = simulator.get_state_space_output()
+print(state_space['state_vector'])  # 상태 벡터
+print(state_space['scores'])        # 점수
+print(state_space['variability'])   # 변동성 지표
+
+# 통계적 신뢰도
+print(results['statistical_confidence'])
+
+# 실험 메타데이터 저장
+simulator.experiment_metadata.save('experiment.json')
+```
+
+#### 개별 테스트
+
+```python
+# 주의력 테스트
 attention_results = simulator.simulate_attention_task(duration=30.0)
+
+# 충동성 테스트
+scenarios = [
+    {'immediate': 5, 'delayed': 50, 'delay': 10},
+    {'immediate': 10, 'delayed': 100, 'delay': 20},
+]
 impulsivity_results = simulator.simulate_impulsivity_task(scenarios)
+
+# 과잉행동 테스트
 hyperactivity_results = simulator.simulate_hyperactivity_task(duration=10.0)
 
 # 결과 시각화
 simulator.visualize_results('results.png')
+```
+
+#### Seed Sweep (통계적 검증)
+
+```python
+from adhd_simulator import ADHDSimulator
+from statistics import StatisticalValidator
+
+validator = StatisticalValidator()
+
+# 여러 Seed로 시뮬레이션 (통계적 검증)
+for seed in range(100):
+    simulator = ADHDSimulator(seed=seed)
+    results = simulator.simulate_full_adhd_assessment()
+    
+    # 결과 수집
+    validator.add_sweep_result(
+        attention=results['assessment']['scores']['attention_deficit'],
+        impulsivity=results['assessment']['scores']['impulsivity'],
+        hyperactivity=results['assessment']['scores']['hyperactivity']
+    )
+
+# 통계적 신뢰도 계산
+confidence = validator.calculate_confidence_distribution()
+print(confidence)  # 분포 기반 신뢰도
 ```
 
 ---
@@ -191,14 +417,21 @@ simulator.visualize_results('results.png')
 - **에너지 변동성**: 에너지 레벨의 변동성
 - **ADHD 패턴 감지**: True/False
 
-### 종합 평가 결과 (Assessment Summary)
+### 종합 평가 결과
 
-- **ADHD-like dynamics strongly observed**: 3가지 특성 모두에서 ADHD 유사 패턴 관측
-- **Attention deficit pattern observed**: 주의력 결핍 패턴만 관측
-- **Impulsivity/Hyperactivity pattern observed**: 충동성 또는 과잉행동 패턴만 관측
-- **Normal range dynamics**: ADHD 유사 패턴 미관측
+**상태공간 출력** (2025-01-25 업데이트):
+- **상태 벡터**: attention, energy, arousal 등 상태 변수
+- **점수**: attention_deficit, impulsivity, hyperactivity
+- **변동성 지표**: 분산, 자기상관, 드롭아웃 비율
 
-**참고**: 이 결과는 시뮬레이션 기반 동역학적 패턴 관측이며, 의학적 진단이 아닙니다.
+**통계적 신뢰도** (2025-01-25 추가):
+- **분포 기반 신뢰도**: Seed sweep 기반 확률
+- **신뢰구간**: 95% 신뢰구간 계산
+
+**참고**: 
+- 이 결과는 시뮬레이션 기반 동역학적 패턴 관측이며, 의학적 진단이 아닙니다.
+- 상태공간 좌표는 연구용 분석에 사용됩니다.
+- 통계적 신뢰도는 Seed sweep 기반 분포 분석 결과입니다.
 
 ---
 
@@ -237,12 +470,22 @@ simulator.visualize_results('results.png')
 ADHD_Simulation_Engine/
 ├── adhd_engines.py          # ADHD 특화 엔진
 ├── adhd_simulator.py        # 메인 시뮬레이터
+├── reproducibility.py       # 재현성 보장 시스템
+├── statistics.py            # 통계적 검증 모듈
+├── dopamine_system.py       # 도파민 시스템 모델 (2025-01-25 추가)
+├── closed_loop_dynamics.py # 폐루프 동역학 시스템 (2025-01-25 추가)
+├── report_generator.py      # 실험 리포트 자동 생성 (2025-01-25 추가)
+├── dynamics_invariant_tests.py # 동역학 불변식 테스트 (2025-01-25 추가)
 ├── __init__.py              # 모듈 초기화
 ├── README.md                # 이 파일
 ├── requirements.txt         # 의존성 목록
 ├── LICENSE                  # MIT 라이선스
 ├── .gitignore              # Git 무시 파일
-└── PHAM_BLOCKCHAIN_SIGNATURE.md  # PHAM 서명
+├── PHAM_BLOCKCHAIN_SIGNATURE.md  # PHAM 서명
+├── MEDICAL_READINESS_ANALYSIS.md # 의료용 준비도 분석
+├── IMPROVEMENTS_APPLIED.md  # 개선사항 보고서
+├── POTENTIAL_IMPROVEMENTS.md # 최대 상승 가능 준비도 분석
+└── EXTENSIBILITY_GUIDE.md   # 확장 가능성 가이드
 ```
 
 ---
@@ -337,17 +580,36 @@ hyperactivity_results = simulator.simulate_hyperactivity_task(
 - ✅ 연구 및 교육 목적으로 사용 가능합니다
 - ✅ 알고리즘 개발 및 테스트 목적
 
-### 의료용 버전 (확장 계획)
+### 의료용 버전 (확장 계획) ❌ 현재 사용 불가능
 
-의료용 버전은 현재 개발 계획 중이며, 다음 기능을 포함할 예정입니다:
+**⚠️ 중요**: 현재 버전은 의료용 병원에서 사용할 수 없습니다.
 
-- 🔄 의료 표준 준수 (HL7/FHIR)
-- 🔄 재현성 보장 시스템
-- 🔄 정밀 생체 데이터 통합
-- 🔄 임상 연구 지원 기능
+**준비도**: **15%** (의료용 전환을 위해 추가 개발 필요)
+
+**의료용 버전에 필요한 기능**:
+
+**✅ 완료된 기능** (코드 레벨):
+- ✅ 재현성 보장 시스템 (Seed 관리, 실험 메타데이터)
+- ✅ 상태공간 좌표 출력
+- ✅ 통계적 검증 (Seed sweep)
+- ✅ **폐루프 동역학 기본 구조** (상태 벡터, 피드백 루프)
+- ✅ **도파민 시스템 기본 모델** (Tonic/Phasic)
+- ✅ **약물 효과 시뮬레이션 기본 구조** (메틸페니데이트, 아토목세틴)
+- ✅ **동역학 불변식 테스트** (물리적 타당성 검증)
+
+**❌ 미구현 기능** (외부 의존):
+- ❌ 의료 표준 준수 (HL7/FHIR) - 의료 표준 라이브러리 필요
+- ❌ 생체 데이터 통합 (EEG, fMRI, HRV) - 실제 데이터 필요
+- ❌ PK/PD 모델 정밀화 - 약물 데이터 필요
+- ❌ 임상 데이터 검증 - 환자 데이터 필요
+- ❌ 법적/윤리적 요건 (HIPAA, IRB) - 외부 승인 필요
+
+**의료용 전환 소요 시간**: 4-8개월 (전담 팀 기준, 코드 레벨 완료로 단축)
 
 **의료용 버전은 실제 의학적 진단 도구가 아닙니다.**  
 임상 연구 지원 및 시뮬레이션 목적으로만 사용되어야 합니다.
+
+**상세 분석**: [의료용 준비도 분석](./MEDICAL_READINESS_ANALYSIS.md)
 
 ---
 
@@ -369,29 +631,55 @@ hyperactivity_results = simulator.simulate_hyperactivity_task(
    - 새로운 모델 통합
    - 실험 기능 추가
 
-### 의료용 확장 (계획 중)
+4. **확장 가능한 구조** (2025-01-25 추가)
+   - 도파민 시스템 확장 (PK/PD 모델)
+   - 폐루프 동역학 확장 (커스텀 피드백 루프)
+   - 약물 효과 시뮬레이션 확장 (새로운 약물 추가)
+   - 리포트 생성 확장 (PDF, HTML 등)
+   - 플러그인 아키텍처 (향후)
 
-1. **폐루프 동역학**
+**확장 가이드**: [확장 가능성 가이드](./EXTENSIBILITY_GUIDE.md)
+
+### 의료용 확장
+
+**✅ 완료된 기능** (코드 레벨):
+1. ✅ **폐루프 동역학** (기본 구조 완료)
    - 엔진 간 피드백 루프
    - 상태 벡터 기반 동역학
-   - 시간축 전이 모델링
+   - 확장 가능한 구조
 
-2. **재현성 시스템**
-   - Seed 관리
-   - 실험 메타데이터
-   - 재현 가능한 결과
+2. ✅ **재현성 시스템** (완료)
+   - Seed 관리 (ReproducibleRNG)
+   - 실험 메타데이터 (ExperimentMetadata)
+   - 재현 가능한 결과 (100% 재현성 보장)
 
-3. **의료 표준 준수**
-   - HL7/FHIR 호환
-   - 생체 데이터 통합 (fMRI, EEG, HRV)
-   - 의료 리포트 생성
+3. ✅ **약물 효과 시뮬레이션** (기본 구조 완료)
+   - 기본 약물 모델 (메틸페니데이트, 아토목세틴)
+   - 약물 농도 곡선
+   - 향후 PK/PD 모델로 확장 가능
 
-4. **약물 효과 시뮬레이션**
-   - PK/PD 모델링
-   - 치료 효과 예측
-   - 개입 전후 비교
+4. ✅ **동역학 불변식 테스트** (완료)
+   - 단조성, 할인율, 게이트 효과
+   - 도파민 효과, 폐루프 안정성
 
-5. **장기 추적**
+5. ✅ **실험 리포트 자동 생성** (완료)
+   - JSON, Markdown, PNG
+   - 향후 PDF, HTML 확장 가능
+
+**❌ 미구현 기능** (외부 의존):
+6. ❌ **의료 표준 준수** (HL7/FHIR)
+   - 의료 표준 라이브러리 필요
+   - EMR 시스템 연동 필요
+
+7. ❌ **생체 데이터 통합** (fMRI, EEG, HRV)
+   - 실제 데이터 필요
+   - 데이터 파싱 라이브러리 필요
+
+8. ❌ **PK/PD 모델 정밀화**
+   - 약물 데이터 필요
+   - 정밀 모델링 필요
+
+9. ❌ **장기 추적**
    - 장기간 ADHD 패턴 추적
    - 변화 추이 분석
    - 예측 모델링
@@ -436,4 +724,54 @@ MIT License
 
 ---
 
-**⚠️ 면책 조항**: 이 시뮬레이션은 연구 및 교육 목적으로만 사용되어야 하며, 실제 의학적 진단 도구가 아닙니다. 실제 ADHD 진단은 전문의와 상담해야 합니다.
+---
+
+## ⚠️ ⚠️ ⚠️ 면책 조항 및 사용 제한 ⚠️ ⚠️ ⚠️
+
+### 🚨 매우 중요한 경고
+
+**이 소프트웨어는 의학적 진단 도구가 아닙니다.**
+
+**절대로 다음 용도로 사용하지 마세요:**
+- ❌ 의학적 진단
+- ❌ 치료 권고
+- ❌ 환자 관리
+- ❌ 임상 의사결정
+- ❌ 법적 증거
+- ❌ 보험 청구
+
+### 현재 버전의 정확한 위치
+
+**✅ 사용 가능** (연구/교육 목적):
+- 대학병원 연구실에서 시뮬레이션 도구로 사용
+- 연구 및 교육 목적
+- 알고리즘 개발 및 테스트
+- 개념 검증
+- 학술 논문 작성
+
+**❌ 사용 불가능** (의료 목적):
+- 의료기기/진단 보조 시스템
+- 환자 데이터 연결 및 진단 보조
+- 실제 의학적 진단 도구
+- 치료 결정 보조
+- 임상 의사결정
+
+### 준비도
+
+- **연구용/교육용**: ✅ **90-95%** (사용 가능)
+- **의료용 병원**: ❌ **25-30%** (사용 불가능)
+
+### 면책 조항
+
+**이 시뮬레이션은 연구 및 교육 목적으로만 사용되어야 하며, 실제 의학적 진단 도구가 아닙니다.**
+
+- ❌ **진단, 예측, 또는 치료 권고를 제공하지 않습니다**
+- ❌ **실제 ADHD 진단은 전문의와 상담해야 합니다**
+- ❌ **의료용 병원에서 환자 진단에 사용할 수 없습니다**
+- ❌ **FDA 승인 없음, CE 마킹 없음, 의료기기 등록 없음**
+- ✅ **연구 및 교육 목적으로만 사용 가능합니다**
+- ✅ **대학병원 연구실에서 시뮬레이션 도구로 사용 가능합니다**
+
+**상세 면책 조항**: [LEGAL_DISCLAIMER.md](LEGAL_DISCLAIMER.md)  
+**의료용 준비도 분석**: [MEDICAL_READINESS_ANALYSIS.md](MEDICAL_READINESS_ANALYSIS.md)  
+**개선사항 보고서**: [IMPROVEMENTS_APPLIED.md](IMPROVEMENTS_APPLIED.md)

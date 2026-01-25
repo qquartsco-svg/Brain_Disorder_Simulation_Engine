@@ -53,6 +53,16 @@ from adhd_engines import (
     HyperactivityEngine
 )
 
+from reproducibility import ReproducibleRNG, ExperimentMetadata
+from statistics import StatisticalValidator
+from dopamine_system import DopamineSystem, MedicationSimulator
+from closed_loop_dynamics import ClosedLoopDynamics, StateVector
+from report_generator import ReportGenerator
+from input_validator import InputValidator
+from audit_trail import AuditTrail
+from dsm5_icd11_mapping import ClinicalAssessmentMapper
+from normative_data import NormativeData, Gender, AgeGroup
+
 
 class ADHDSimulator:
     """
@@ -61,13 +71,27 @@ class ADHDSimulator:
     Cookiie Brain Engine과 ADHD 특화 엔진을 통합한 시뮬레이션 시스템
     """
     
-    def __init__(self, config: Optional[CookiieBrainConfig] = None):
+    def __init__(self, config: Optional[CookiieBrainConfig] = None,
+                 seed: Optional[int] = None,
+                 enable_closed_loop: bool = True,
+                 enable_dopamine: bool = True):
         """
         ADHD 시뮬레이터 초기화
         
         Args:
             config: Cookiie Brain Engine 설정
+            seed: 재현성을 위한 시드 값 (None이면 자동 생성)
+            enable_closed_loop: 폐루프 동역학 활성화 (기본값: True)
+            enable_dopamine: 도파민 시스템 활성화 (기본값: True)
         """
+        # 재현성 시스템 초기화 (최우선)
+        self.rng = ReproducibleRNG(seed=seed)
+        self.seed = self.rng.seed
+        
+        # 설정 저장
+        self.enable_closed_loop = enable_closed_loop
+        self.enable_dopamine = enable_dopamine
+        
         # Cookiie Brain Engine 초기화
         if config is None:
             config = CookiieBrainConfig(
@@ -78,11 +102,30 @@ class ADHDSimulator:
         
         self.brain = CookiieBrainEngine(config)
         
-        # ADHD 특화 엔진 초기화
+        # 도파민 시스템 초기화 (확장 가능)
+        if self.enable_dopamine:
+            self.dopamine_system = DopamineSystem(
+                rng=self.rng.get_rng('dopamine'),
+                adhd_deficit=0.3  # 기본값, 향후 설정 가능
+            )
+            self.medication_simulator = MedicationSimulator(
+                rng=self.rng.get_rng('medication')
+            )
+        else:
+            self.dopamine_system = None
+            self.medication_simulator = None
+        
+        # 폐루프 동역학 시스템 초기화 (확장 가능)
+        if self.enable_closed_loop:
+            self.closed_loop = ClosedLoopDynamics(rng=self.rng.get_rng('dynamics'))
+        else:
+            self.closed_loop = None
+        
+        # ADHD 특화 엔진 초기화 (RNG 주입)
         self.adhd_engines = {
-            'attention': AttentionControlEngine(),
-            'impulse': ImpulseControlEngine(),
-            'hyperactivity': HyperactivityEngine()
+            'attention': AttentionControlEngine(rng=self.rng.get_rng('attention')),
+            'impulse': ImpulseControlEngine(rng=self.rng.get_rng('impulse')),
+            'hyperactivity': HyperactivityEngine(rng=self.rng.get_rng('hyperactivity'))
         }
         
         # 시뮬레이션 데이터
@@ -92,8 +135,25 @@ class ADHDSimulator:
             'impulse_scores': [],
             'hyperactivity_scores': [],
             'brain_states': [],
-            'adhd_patterns': []
+            'state_vectors': [],  # 상태공간 좌표 추가
+            'dopamine_levels': []  # 도파민 레벨 추가
         }
+        
+        # 통계적 검증 시스템
+        self.statistical_validator = StatisticalValidator()
+        
+        # 입력 검증 시스템 (Phase 1: 의료 규제 준수)
+        self.input_validator = InputValidator()
+        
+        # Audit Trail 시스템 (Phase 1: 의료 규제 준수)
+        self.audit_trail = AuditTrail()
+        
+        # Phase 2: 임상 평가 매핑 시스템
+        self.clinical_mapper = ClinicalAssessmentMapper()
+        self.normative_data = NormativeData()
+        
+        # 실험 메타데이터 (나중에 설정)
+        self.experiment_metadata = None
         
         # 시뮬레이션 시작 시간
         self.start_time = None
@@ -140,20 +200,76 @@ class ADHDSimulator:
                         'relevance': event.get('relevance', 0.5)
                     })
             
-            # Cookiie Brain Engine 처리
-            brain_input = BrainInput(
-                sensory={
-                    'task': {
-                        'name': '지속적 작업',
-                        'importance': task_importance,
-                        'time_elapsed': t
-                    },
+            # 도파민 시스템 업데이트 (폐루프)
+            dopamine_boost = 0.0
+            if self.enable_dopamine:
+                # 약물 효과 계산
+                if self.medication_simulator:
+                    med_effect = self.medication_simulator.get_current_effect(t)
+                    dopamine_boost = med_effect['dopamine_boost']
+                
+                # 도파민 업데이트
+                current_dopamine = self.dopamine_system.update(
+                    reward_prediction_error=0.0,  # 향후 RPE 계산 가능
+                    time_elapsed=t,
+                    external_boost=dopamine_boost
+                )
+                
+                # 도파민 효과를 주의력 엔진에 적용
+                attention_decay_multiplier = self.dopamine_system.get_effect_on_attention()
+                # 주의력 엔진의 decay_rate 조정 (동적)
+                original_decay = self.adhd_engines['attention'].attention_decay_rate
+                self.adhd_engines['attention'].attention_decay_rate = (
+                    original_decay * attention_decay_multiplier
+                )
+            
+            # 폐루프 동역학 업데이트 (폐루프 모드)
+            if self.enable_closed_loop:
+                # 외부 입력 구성
+                external_input = {
+                    'task_importance': task_importance,
                     'distractions': current_distractions,
-                    'attention_demand': task_importance
-                },
-                query='작업 지속',
-                context={'goal': '작업 완료'}
-            )
+                    'time_elapsed': t
+                }
+                
+                # 상태 벡터 업데이트
+                if self.enable_dopamine:
+                    external_input['dopamine_level'] = self.dopamine_system.current_dopamine
+                
+                updated_state = self.closed_loop.update_state(external_input, dt=dt)
+                
+                # 상태 벡터에서 Brain Engine 입력 생성
+                brain_input = BrainInput(
+                    sensory={
+                        'task': {
+                            'name': '지속적 작업',
+                            'importance': task_importance,
+                            'time_elapsed': t
+                        },
+                        'distractions': current_distractions,
+                        'attention_demand': task_importance,
+                        'thalamus_gate': updated_state.thalamus_gate,
+                        'arousal': updated_state.arousal,
+                        'dopamine': updated_state.dopamine_level
+                    },
+                    query='작업 지속',
+                    context={'goal': '작업 완료'}
+                )
+            else:
+                # 오픈루프 모드 (기존 방식)
+                brain_input = BrainInput(
+                    sensory={
+                        'task': {
+                            'name': '지속적 작업',
+                            'importance': task_importance,
+                            'time_elapsed': t
+                        },
+                        'distractions': current_distractions,
+                        'attention_demand': task_importance
+                    },
+                    query='작업 지속',
+                    context={'goal': '작업 완료'}
+                )
             
             brain_output = self.brain.process(brain_input)
             brain_state = self.brain.get_state()
@@ -165,15 +281,50 @@ class ADHDSimulator:
                 time_elapsed=t
             )
             
+            # 폐루프 피드백 (폐루프 모드)
+            if self.enable_closed_loop:
+                self.closed_loop.apply_feedback(
+                    attention_score=attention_result['attention_score'],
+                    impulse_score=0.0,  # 주의력 테스트에서는 충동성 없음
+                    hyperactivity_score=0.0  # 주의력 테스트에서는 과잉행동 없음
+                )
+            
             # 데이터 저장
             self.simulation_data['timestamps'].append(t)
             self.simulation_data['attention_scores'].append(attention_result['attention_score'])
-            self.simulation_data['brain_states'].append({
-                'energy': brain_state.energy,
-                'confidence': brain_output.confidence,
-                'arousal': brain_state.get('arousal', 0.5) if hasattr(brain_state, 'get') else 0.5
-            })
-            self.simulation_data['adhd_patterns'].append(attention_result['pattern'])
+            
+            # Brain State 저장 (에러 처리 포함)
+            try:
+                brain_state_dict = {
+                    'energy': brain_state.energy if hasattr(brain_state, 'energy') else 0.5,
+                    'confidence': brain_output.confidence if hasattr(brain_output, 'confidence') else 0.5,
+                    'arousal': brain_state.get('arousal', 0.5) if hasattr(brain_state, 'get') else 0.5
+                }
+            except Exception:
+                brain_state_dict = {'energy': 0.5, 'confidence': 0.5, 'arousal': 0.5}
+            
+            self.simulation_data['brain_states'].append(brain_state_dict)
+            
+            # 상태공간 좌표 저장 (폐루프 모드)
+            if self.enable_closed_loop:
+                state = self.closed_loop.get_state()
+                state_vector = state.to_dict()
+                state_vector['time'] = t
+            else:
+                state_vector = {
+                    'attention': attention_result['attention_score'],
+                    'energy': brain_state_dict['energy'],
+                    'arousal': brain_state_dict['arousal'],
+                    'time': t
+                }
+            
+            self.simulation_data['state_vectors'].append(state_vector)
+            
+            # 도파민 레벨 저장 (도파민 모드)
+            if self.enable_dopamine:
+                self.simulation_data['dopamine_levels'].append(
+                    self.dopamine_system.current_dopamine
+                )
             
             # 진행 상황 출력
             if step % 50 == 0:
@@ -278,6 +429,36 @@ class ADHDSimulator:
         
         Args:
             duration: 시뮬레이션 지속 시간 (초)
+            task_demand: 작업 요구도 (0.0 ~ 1.0)
+            
+        Returns:
+            results: 시뮬레이션 결과
+        """
+        import time
+        start_time = time.time()
+        
+        # 입력 검증 (Phase 1: 의료 규제 준수)
+        input_data = {
+            'duration': duration,
+            'task_demand': task_demand
+        }
+        is_valid, errors, warnings = self.input_validator.validate_hyperactivity_input(input_data)
+        if not is_valid:
+            self.audit_trail.log_input_validation(input_data, False, errors, warnings)
+            raise ValueError(f"입력 검증 실패: {', '.join(errors)}")
+        
+        if warnings:
+            self.audit_trail.log_input_validation(input_data, True, [], warnings)
+        
+        # 입력 데이터 정제
+        sanitized_input = self.input_validator.sanitize_input(input_data)
+        duration = sanitized_input['duration']
+        task_demand = sanitized_input['task_demand']
+        """
+        과잉행동 테스트 시뮬레이션
+        
+        Args:
+            duration: 시뮬레이션 지속 시간 (초)
             task_demand: 작업 요구도
         
         Returns:
@@ -365,6 +546,71 @@ class ADHDSimulator:
         
         return results
     
+    def set_experiment_metadata(self, config: Dict):
+        """
+        실험 메타데이터 설정
+        
+        Args:
+            config: 실험 설정 딕셔너리
+        """
+        self.experiment_metadata = ExperimentMetadata(
+            config=config,
+            seed=self.seed
+        )
+    
+    def get_state_space_output(self) -> Dict:
+        """
+        상태공간 좌표 출력 (라벨 대신)
+        
+        Returns:
+            상태 벡터 및 점수
+        """
+        if len(self.simulation_data['attention_scores']) == 0:
+            return {
+                'state_vector': None,
+                'scores': None,
+                'variability': None
+            }
+        
+        # 최근 상태 추출
+        latest_idx = -1
+        
+        # Brain State에서 상태 추출
+        brain_state = None
+        if self.simulation_data['brain_states']:
+            brain_state = self.simulation_data['brain_states'][latest_idx]
+        
+        # 상태 벡터 구성
+        state_vector = {
+            'attention': self.simulation_data['attention_scores'][latest_idx] if self.simulation_data['attention_scores'] else 0.0,
+            'energy': brain_state.get('energy', 0.5) if brain_state else 0.5,
+            'arousal': brain_state.get('arousal', 0.5) if brain_state else 0.5,
+            'confidence': brain_state.get('confidence', 0.5) if brain_state else 0.5
+        }
+        
+        # 점수
+        scores = {
+            'attention_deficit': 1.0 - state_vector['attention'],
+            'impulsivity': self.simulation_data['impulse_scores'][latest_idx] if self.simulation_data['impulse_scores'] else 0.0,
+            'hyperactivity': self.simulation_data['hyperactivity_scores'][latest_idx] if self.simulation_data['hyperactivity_scores'] else 0.0
+        }
+        
+        # 변동성 (ADHD 특성)
+        variability = {}
+        if len(self.simulation_data['attention_scores']) >= 10:
+            attention_variability = self.adhd_engines['attention'].get_attention_variability()
+            variability['attention'] = attention_variability
+        
+        if len(self.simulation_data['hyperactivity_scores']) >= 10:
+            energy_trend = self.adhd_engines['hyperactivity'].get_energy_trend()
+            variability['energy'] = energy_trend
+        
+        return {
+            'state_vector': state_vector,
+            'scores': scores,
+            'variability': variability
+        }
+    
     def simulate_full_adhd_assessment(self) -> Dict:
         """
         전체 ADHD 평가 시뮬레이션
@@ -405,22 +651,61 @@ class ADHDSimulator:
             task_demand=0.5
         )
         
-        # 종합 평가
+        # 상태공간 출력 (라벨 대신)
+        state_space = self.get_state_space_output()
+        
+        # 종합 평가 (상태공간 기반)
         assessment = self._assess_adhd_patterns(
             attention_results,
             impulsivity_results,
             hyperactivity_results
         )
         
+        # 통계적 검증 (Seed sweep 기반 신뢰도)
+        self.statistical_validator.add_sweep_result(
+            attention=assessment['scores']['attention_deficit'],
+            impulsivity=assessment['scores']['impulsivity'],
+            hyperactivity=assessment['scores']['hyperactivity']
+        )
+        
+        confidence_dist = self.statistical_validator.calculate_confidence_distribution()
+        
         print(f"\n{'='*70}")
         print(f"🏆 ADHD 동역학 패턴 평가 결과")
         print(f"{'='*70}")
-        print(f"평가 요약: {assessment['assessment']}")
-        print(f"패턴 신뢰도 (시뮬레이션 기반): {assessment['confidence']:.2f}")
-        print(f"\n세부 점수:")
-        print(f"  주의력 결핍 점수: {assessment['scores']['attention_deficit']:.3f}")
-        print(f"  충동성 점수: {assessment['scores']['impulsivity']:.3f}")
-        print(f"  과잉행동 점수: {assessment['scores']['hyperactivity']:.3f}")
+        print(f"실험 ID: {self.experiment_metadata.experiment_id if self.experiment_metadata else 'N/A'}")
+        print(f"Seed: {self.seed}")
+        print(f"\n상태공간 좌표:")
+        if state_space['state_vector']:
+            for key, value in state_space['state_vector'].items():
+                print(f"  {key}: {value:.3f}")
+        print(f"\n점수:")
+        print(f"  주의력 결핍: {assessment['scores']['attention_deficit']:.3f}")
+        print(f"  충동성: {assessment['scores']['impulsivity']:.3f}")
+        print(f"  과잉행동: {assessment['scores']['hyperactivity']:.3f}")
+        consistency_dist = self.statistical_validator.calculate_confidence_distribution()
+        
+        print(f"\n시뮬레이션 일관성 점수 (분포 기반):")
+        if consistency_dist['n_samples'] > 0:
+            for key, score in consistency_dist['consistency_score'].items():
+                dist = consistency_dist['distributions'][key]
+                if dist.get('is_valid', False):
+                    print(f"  {key}: {score:.2%} (분산: {dist['variance']:.4f})")
+                else:
+                    print(f"  {key}: 계산 불가 ({dist.get('reason', 'unknown')})")
+        
+        # Phase 2: DSM-5/ICD-11 매핑
+        print(f"\n{'='*70}")
+        print(f"📋 임상 평가 매핑 (DSM-5 / ICD-11)")
+        print(f"{'='*70}")
+        clinical_assessment = self.clinical_mapper.assess_from_simulation_results(
+            attention_results,
+            impulsivity_results,
+            hyperactivity_results
+        )
+        clinical_report = self.clinical_mapper.format_clinical_report(clinical_assessment)
+        print(clinical_report)
+        
         print(f"\n⚠️  참고: 이 결과는 시뮬레이션 기반 동역학적 패턴 평가이며, 의학적 진단이 아닙니다.")
         print(f"{'='*70}\n")
         
@@ -428,8 +713,15 @@ class ADHDSimulator:
             'attention': attention_results,
             'impulsivity': impulsivity_results,
             'hyperactivity': hyperactivity_results,
-            'assessment': assessment
+            'state_space': state_space,
+            'assessment': assessment,
+            'statistical_consistency': consistency_dist,
+            'clinical_assessment': clinical_assessment,  # Phase 2: DSM-5/ICD-11 매핑
+            'experiment_metadata': self.experiment_metadata.to_dict() if self.experiment_metadata else None
         }
+        
+        # Phase 3: HL7 FHIR 변환 (선택적)
+        # 필요 시 fhir_bundle = self.fhir_mapper.create_complete_fhir_bundle(...)
     
     def _analyze_attention_results(self) -> Dict:
         """주의력 결과 분석"""
@@ -540,7 +832,7 @@ class ADHDSimulator:
         
         # 3. ADHD 패턴 분포
         ax3 = axes[1, 0]
-        if self.simulation_data['adhd_patterns']:
+        if 'adhd_patterns' in self.simulation_data and self.simulation_data['adhd_patterns']:
             adhd_count = sum(1 for p in self.simulation_data['adhd_patterns'] if p == 'adhd')
             normal_count = len(self.simulation_data['adhd_patterns']) - adhd_count
             
@@ -549,6 +841,21 @@ class ADHDSimulator:
             ax3.set_ylabel('빈도', fontsize=10)
             ax3.set_title('ADHD 패턴 분포', fontsize=12, fontweight='bold')
             ax3.grid(axis='y', alpha=0.3)
+        else:
+            # adhd_patterns가 없으면 주의력 점수 기반으로 패턴 계산
+            if self.simulation_data['attention_scores']:
+                adhd_threshold = 0.5
+                adhd_count = sum(1 for s in self.simulation_data['attention_scores'] if s < adhd_threshold)
+                normal_count = len(self.simulation_data['attention_scores']) - adhd_count
+                
+                ax3.bar(['정상', 'ADHD 패턴'], [normal_count, adhd_count],
+                       color=['green', 'red'], alpha=0.7, edgecolor='black', linewidth=2)
+                ax3.set_ylabel('빈도', fontsize=10)
+                ax3.set_title('ADHD 패턴 분포 (주의력 기반)', fontsize=12, fontweight='bold')
+                ax3.grid(axis='y', alpha=0.3)
+            else:
+                ax3.text(0.5, 0.5, '데이터 없음', ha='center', va='center', fontsize=12)
+                ax3.set_title('ADHD 패턴 분포', fontsize=12, fontweight='bold')
         
         # 4. 주의력 히스토그램
         ax4 = axes[1, 1]
@@ -570,25 +877,75 @@ class ADHDSimulator:
 def main():
     """메인 실행 함수"""
     print("\n" + "="*70)
-    print("🧠 ADHD 시뮬레이터 시작")
+    print("🧠 ADHD 시뮬레이터 시작 (재현성 보장 버전)")
     print("="*70)
     
-    # 시뮬레이터 초기화
-    simulator = ADHDSimulator()
+    try:
+        # 시뮬레이터 초기화 (Seed 지정 가능)
+        seed = None  # None이면 자동 생성, 고정하려면 정수 지정
+        simulator = ADHDSimulator(seed=seed)
+        
+        # 실험 메타데이터 설정
+        experiment_config = {
+            'simulation_type': 'full_assessment',
+            'duration': 30.0,
+            'task_importance': 0.8,
+            'version': '1.0.0'
+        }
+        simulator.set_experiment_metadata(experiment_config)
+        
+        print(f"실험 ID: {simulator.experiment_metadata.experiment_id}")
+        print(f"Seed: {simulator.seed}")
+        print(f"Git Commit: {simulator.experiment_metadata.git_commit}")
+        print("="*70 + "\n")
+        
+        # 전체 평가 실행
+        results = simulator.simulate_full_adhd_assessment()
+        
+        # 결과 시각화
+        output_dir = Path(__file__).parent
+        output_path = output_dir / 'adhd_simulation_results.png'
+        simulator.visualize_results(str(output_path))
+        
+        # 실험 리포트 자동 생성
+        report_generator = ReportGenerator(output_dir=str(output_dir))
+        report_files = report_generator.generate_report(
+            results=results,
+            experiment_metadata=simulator.experiment_metadata.to_dict() if simulator.experiment_metadata else None,
+            output_prefix=f"experiment_{simulator.experiment_metadata.experiment_id if simulator.experiment_metadata else 'default'}"
+        )
+        
+        # 실험 메타데이터 저장
+        metadata_path = output_dir / f"experiment_{simulator.experiment_metadata.experiment_id}.json"
+        simulator.experiment_metadata.result_path = str(output_path)
+        simulator.experiment_metadata.save(str(metadata_path))
+        
+        print("\n" + "="*70)
+        print("✅ ADHD 시뮬레이션 완료")
+        print("="*70)
+        print(f"\n결과 파일: {output_path}")
+        print(f"메타데이터: {metadata_path}")
+        print(f"재현을 위한 Seed: {simulator.seed}")
+        print(f"\n생성된 리포트:")
+        print(f"  - JSON: {report_files.get('json', 'N/A')}")
+        print(f"  - Markdown: {report_files.get('markdown', 'N/A')}")
+        print(f"  - Visualization: {report_files.get('png', 'N/A')}")
+        print("="*70 + "\n")
+        
+    except Exception as e:
+        print(f"\n❌ 오류 발생: {e}")
+        import traceback
+        traceback.print_exc()
+        return 1
     
-    # 전체 평가 실행
-    results = simulator.simulate_full_adhd_assessment()
-    
-    # 결과 시각화
-    output_dir = Path(__file__).parent
-    output_path = output_dir / 'adhd_simulation_results.png'
-    simulator.visualize_results(str(output_path))
-    
-    print("\n" + "="*70)
-    print("✅ ADHD 시뮬레이션 완료")
-    print("="*70)
-    print(f"\n결과 파일: {output_path}")
-    print("="*70 + "\n")
+    return 0
+
+
+def main():
+    """CLI 진입점"""
+    import sys
+    from cli import main as cli_main
+    cli_main()
 
 
 if __name__ == "__main__":

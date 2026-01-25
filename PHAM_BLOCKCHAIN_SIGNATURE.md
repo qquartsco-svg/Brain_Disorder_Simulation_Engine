@@ -21,11 +21,27 @@
 ## 블록체인 서명
 
 ```
+================================================================================
+PHAM Blockchain Signature
+Proof of Honest Authorship & Merit
+================================================================================
+
 Project: ADHD_Simulation_Engine
-Author: GNJz
+Repository: https://github.com/qquartsco-svg/ADHD_Simulation_Engine
+Author: GNJz (Qquarts)
 Contribution: 100% (Initial Development)
 Date: 2025-01-25
-PHAM Rule: GNJz contribution cap 6%
+Version: 1.0.0
+License: MIT
+
+PHAM Rule: GNJz contribution cap 6% (for future contributions)
+
+Blockchain Hash: [To be generated on deployment]
+Commit Hash: [To be generated on deployment]
+
+================================================================================
+Qquarts co Present
+================================================================================
 ```
 
 ## 라이선스

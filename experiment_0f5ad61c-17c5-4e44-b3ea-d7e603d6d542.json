@@ -1,0 +1,15 @@
+{
+  "experiment_id": "0f5ad61c-17c5-4e44-b3ea-d7e603d6d542",
+  "timestamp": "2026-01-26T01:05:30.881406",
+  "seed": 1280487478,
+  "config_hash": "5727681a5c3640f3ce92e6159ce74e27614e2319280a59fcfe7eaa8fdeaaee37",
+  "git_commit": "f4e2cbf372b432f43a0a33c364d54c3da40756a1",
+  "platform_info": {
+    "os": "Darwin",
+    "os_version": "Darwin Kernel Version 24.6.0: Mon Jul 14 11:30:40 PDT 2025; root:xnu-11417.140.69~1/RELEASE_ARM64_T8132",
+    "python_version": "3.13.5",
+    "cpu_count": 10,
+    "architecture": "arm64"
+  },
+  "result_path": "/Users/jazzin/Desktop/00_BRAIN/ADHD_Simulation_Engine/adhd_simulation_results.png"
+}
