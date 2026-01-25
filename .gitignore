@@ -43,6 +43,12 @@ Thumbs.db
 *.pdf
 results/
 output/
+test_output/
+
+# 실험 결과 파일
+experiment_*.json
+experiment_*.md
+experiment_*.png
 
 # 로그
 *.log
