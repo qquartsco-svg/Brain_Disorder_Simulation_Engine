@@ -99,7 +99,7 @@ def main():
     
     # adhd_simulator 모듈 import
     try:
-        from adhd_simulator import ADHDSimulator
+        from adhd_simulation.core.adhd_simulator import ADHDSimulator
     except ImportError as e:
         print(f"❌ 오류: 모듈을 불러올 수 없습니다: {e}", file=sys.stderr)
         print("💡 해결: Cookiie Brain Engine이 설치되어 있는지 확인하세요.", file=sys.stderr)

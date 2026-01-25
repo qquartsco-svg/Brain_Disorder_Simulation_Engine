@@ -47,21 +47,21 @@ from cookiie_brain import (
     BrainInput, BrainOutput, BrainState
 )
 
-from adhd_engines import (
+from ..core.adhd_engines import (
     AttentionControlEngine,
     ImpulseControlEngine,
     HyperactivityEngine
 )
 
-from reproducibility import ReproducibleRNG, ExperimentMetadata
-from statistics import StatisticalValidator
-from dopamine_system import DopamineSystem, MedicationSimulator
-from closed_loop_dynamics import ClosedLoopDynamics, StateVector
-from report_generator import ReportGenerator
-from input_validator import InputValidator
-from audit_trail import AuditTrail
-from dsm5_icd11_mapping import ClinicalAssessmentMapper
-from normative_data import NormativeData, Gender, AgeGroup
+from ..utils.reproducibility import ReproducibleRNG, ExperimentMetadata
+from ..utils.statistics import StatisticalValidator
+from ..core.dopamine_system import DopamineSystem, MedicationSimulator
+from ..core.closed_loop_dynamics import ClosedLoopDynamics, StateVector
+from ..utils.report_generator import ReportGenerator
+from ..medical.input_validator import InputValidator
+from ..medical.audit_trail import AuditTrail
+from ..medical.dsm5_icd11_mapping import ClinicalAssessmentMapper
+from ..medical.normative_data import NormativeData, Gender, AgeGroup
 
 
 class ADHDSimulator:
