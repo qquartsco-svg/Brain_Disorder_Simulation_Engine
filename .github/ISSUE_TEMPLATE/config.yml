@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📚 문서 보기
+    url: https://github.com/qquartsco-svg/ADHD_simulation_engine/tree/main/docs
+    about: 프로젝트 문서를 확인하세요
+  - name: ⚠️ 면책 조항
+    url: https://github.com/qquartsco-svg/ADHD_simulation_engine/blob/main/LEGAL_DISCLAIMER.md
+    about: 면책 조항 및 사용 제한 확인

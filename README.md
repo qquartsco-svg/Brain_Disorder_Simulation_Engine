@@ -90,7 +90,7 @@ ADHD Simulation Engine은 Cookiie Brain Engine의 동역학적 상호작용을 �
 - ❌ 임상 데이터 검증 - 환자 데이터 필요
 - ❌ 법적/윤리적 요건 - 외부 승인 필요
 
-**상세 분석**: [의료용 준비도 분석](./MEDICAL_READINESS_ANALYSIS.md) | [개선사항 보고서](./IMPROVEMENTS_APPLIED.md)
+**상세 분석**: [의료용 준비도 분석](./docs/medical/MEDICAL_READINESS_ANALYSIS.md) | [개선사항 보고서](./docs/guides/IMPROVEMENTS_APPLIED.md)
 
 ---
 
@@ -482,10 +482,14 @@ ADHD_Simulation_Engine/
 ├── LICENSE                  # MIT 라이선스
 ├── .gitignore              # Git 무시 파일
 ├── PHAM_BLOCKCHAIN_SIGNATURE.md  # PHAM 서명
-├── MEDICAL_READINESS_ANALYSIS.md # 의료용 준비도 분석
-├── IMPROVEMENTS_APPLIED.md  # 개선사항 보고서
-├── POTENTIAL_IMPROVEMENTS.md # 최대 상승 가능 준비도 분석
-└── EXTENSIBILITY_GUIDE.md   # 확장 가능성 가이드
+├── LEGAL_DISCLAIMER.md          # 면책 조항
+├── INSTALLATION.md               # 설치 가이드
+├── docs/                         # 상세 문서 디렉토리
+│   ├── deployment/               # 배포 관련 문서
+│   ├── medical/                   # 의료 관련 문서
+│   ├── analysis/                 # 분석 문서
+│   ├── phase/                    # Phase별 보고서
+│   └── guides/                   # 가이드 문서
 ```
 
 ---
@@ -609,7 +613,7 @@ hyperactivity_results = simulator.simulate_hyperactivity_task(
 **의료용 버전은 실제 의학적 진단 도구가 아닙니다.**  
 임상 연구 지원 및 시뮬레이션 목적으로만 사용되어야 합니다.
 
-**상세 분석**: [의료용 준비도 분석](./MEDICAL_READINESS_ANALYSIS.md)
+**상세 분석**: [의료용 준비도 분석](./docs/medical/MEDICAL_READINESS_ANALYSIS.md)
 
 ---
 
@@ -638,7 +642,7 @@ hyperactivity_results = simulator.simulate_hyperactivity_task(
    - 리포트 생성 확장 (PDF, HTML 등)
    - 플러그인 아키텍처 (향후)
 
-**확장 가이드**: [확장 가능성 가이드](./EXTENSIBILITY_GUIDE.md)
+**확장 가이드**: [확장 가능성 가이드](./docs/guides/EXTENSIBILITY_GUIDE.md)
 
 ### 의료용 확장
 
@@ -773,5 +777,5 @@ MIT License
 - ✅ **대학병원 연구실에서 시뮬레이션 도구로 사용 가능합니다**
 
 **상세 면책 조항**: [LEGAL_DISCLAIMER.md](LEGAL_DISCLAIMER.md)  
-**의료용 준비도 분석**: [MEDICAL_READINESS_ANALYSIS.md](MEDICAL_READINESS_ANALYSIS.md)  
-**개선사항 보고서**: [IMPROVEMENTS_APPLIED.md](IMPROVEMENTS_APPLIED.md)
+**의료용 준비도 분석**: [docs/medical/MEDICAL_READINESS_ANALYSIS.md](docs/medical/MEDICAL_READINESS_ANALYSIS.md)  
+**개선사항 보고서**: [docs/guides/IMPROVEMENTS_APPLIED.md](docs/guides/IMPROVEMENTS_APPLIED.md)
