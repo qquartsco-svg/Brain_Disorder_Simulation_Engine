@@ -9,7 +9,12 @@
 
 ADHD Simulation Engine은 Cookiie Brain Engine의 동역학적 상호작용을 활용하여 ADHD의 주요 특성(주의력 결핍, 충동성, 과잉행동)을 시뮬레이션하는 전용 엔진입니다.
 
-**⚠️ 중요**: 이 시뮬레이션은 연구 및 교육 목적으로만 사용되어야 합니다. 실제 의학적 진단 도구가 아닙니다.
+**⚠️ 중요 안내**:
+- 이 프로젝트는 인지 동역학의 계산적 시뮬레이션입니다.
+- **진단, 예측, 또는 치료 권고를 제공하지 않습니다.**
+- 연구 및 교육 목적으로만 사용되어야 합니다.
+- 실제 의학적 진단 도구가 아닙니다.
+- 실제 ADHD 진단은 전문의와 상담해야 합니다.
 
 ---
 
@@ -186,12 +191,14 @@ simulator.visualize_results('results.png')
 - **에너지 변동성**: 에너지 레벨의 변동성
 - **ADHD 패턴 감지**: True/False
 
-### 종합 진단
+### 종합 평가 결과 (Assessment Summary)
 
-- **ADHD 가능성 높음**: 3가지 특성 모두에서 ADHD 패턴 감지
-- **주의력 결핍 가능성**: 주의력 결핍만 감지
-- **충동성/과잉행동 가능성**: 충동성 또는 과잉행동만 감지
-- **정상 범위**: ADHD 패턴 미감지
+- **ADHD-like dynamics strongly observed**: 3가지 특성 모두에서 ADHD 유사 패턴 관측
+- **Attention deficit pattern observed**: 주의력 결핍 패턴만 관측
+- **Impulsivity/Hyperactivity pattern observed**: 충동성 또는 과잉행동 패턴만 관측
+- **Normal range dynamics**: ADHD 유사 패턴 미관측
+
+**참고**: 이 결과는 시뮬레이션 기반 동역학적 패턴 관측이며, 의학적 진단이 아닙니다.
 
 ---
 
@@ -219,7 +226,7 @@ simulator.visualize_results('results.png')
 
 - 에너지 레벨
 - 각성도
-- 신뢰도
+- 패턴 신뢰도 (시뮬레이션 기반)
 - 주의력 점수
 
 ---
@@ -284,12 +291,14 @@ from adhd_simulator import ADHDSimulator
 simulator = ADHDSimulator()
 results = simulator.simulate_full_adhd_assessment()
 
-print(f"진단: {results['diagnosis']}")
-print(f"신뢰도: {results['confidence']:.1f}%")
-print(f"주의력 결핍: {results['attention_deficit']:.3f}")
-print(f"충동성: {results['impulsivity']:.3f}")
-print(f"과잉행동: {results['hyperactivity']:.3f}")
+print(f"Assessment summary: {results['assessment']}")
+print(f"Pattern confidence (simulation-based): {results['confidence']:.2f}")
+print(f"Attention deficit score: {results['attention_deficit']:.3f}")
+print(f"Impulsivity score: {results['impulsivity']:.3f}")
+print(f"Hyperactivity score: {results['hyperactivity']:.3f}")
 ```
+
+**참고**: `assessment`는 시뮬레이션 기반 동역학적 패턴 평가 결과이며, 의학적 진단이 아닙니다.
 
 ### 개별 테스트 실행
 

@@ -405,29 +405,30 @@ class ADHDSimulator:
             task_demand=0.5
         )
         
-        # 종합 진단
-        diagnosis = self._diagnose_adhd(
+        # 종합 평가
+        assessment = self._assess_adhd_patterns(
             attention_results,
             impulsivity_results,
             hyperactivity_results
         )
         
         print(f"\n{'='*70}")
-        print(f"🏆 ADHD 종합 진단 결과")
+        print(f"🏆 ADHD 동역학 패턴 평가 결과")
         print(f"{'='*70}")
-        print(f"진단: {diagnosis['diagnosis']}")
-        print(f"신뢰도: {diagnosis['confidence']:.1%}")
+        print(f"평가 요약: {assessment['assessment']}")
+        print(f"패턴 신뢰도 (시뮬레이션 기반): {assessment['confidence']:.2f}")
         print(f"\n세부 점수:")
-        print(f"  주의력 결핍: {diagnosis['scores']['attention_deficit']:.3f}")
-        print(f"  충동성: {diagnosis['scores']['impulsivity']:.3f}")
-        print(f"  과잉행동: {diagnosis['scores']['hyperactivity']:.3f}")
+        print(f"  주의력 결핍 점수: {assessment['scores']['attention_deficit']:.3f}")
+        print(f"  충동성 점수: {assessment['scores']['impulsivity']:.3f}")
+        print(f"  과잉행동 점수: {assessment['scores']['hyperactivity']:.3f}")
+        print(f"\n⚠️  참고: 이 결과는 시뮬레이션 기반 동역학적 패턴 평가이며, 의학적 진단이 아닙니다.")
         print(f"{'='*70}\n")
         
         return {
             'attention': attention_results,
             'impulsivity': impulsivity_results,
             'hyperactivity': hyperactivity_results,
-            'diagnosis': diagnosis
+            'assessment': assessment
         }
     
     def _analyze_attention_results(self) -> Dict:
