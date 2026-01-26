@@ -4,6 +4,8 @@
 
 ADHD, 우울증, 불안장애, 강박장애 등 다양한 뇌 질환 메커니즘 시뮬레이션
 
+> **프로젝트 구조**: 이 저장소는 **Brain Disorder Simulation Engine** (상위 개념)이며, 현재 **ADHD 시뮬레이션**을 플래그십 모듈로 포함합니다. 향후 우울증, 불안장애, 강박장애 등 추가 모듈이 통합됩니다.
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 
@@ -13,8 +15,8 @@ ADHD, 우울증, 불안장애, 강박장애 등 다양한 뇌 질환 메커니�
 
 ```bash
 # 저장소 클론
-git clone https://github.com/qquartsco-svg/ADHD_Simulation_Engine.git
-cd ADHD_Simulation_Engine
+git clone https://github.com/qquartsco-svg/Brain_Disorder_Simulation_Engine.git
+cd Brain_Disorder_Simulation_Engine
 
 # 패키지 설치
 pip install -e .
@@ -23,16 +25,36 @@ pip install -e .
 # https://github.com/qquartsco-svg/cookiieBrain_alpha
 ```
 
-### 실행
+### 실행 예시
 
 ```bash
-# 명령줄에서 실행
-python -m adhd_simulator --age 15 --gender male --scenario adhd
+# ADHD 시뮬레이션
+python -m brain_disorder_simulation.disorders.adhd.adhd_simulator
 
-# 또는 Python 코드에서
-from adhd_simulator import ADHDSimulator
+# 우울증 시뮬레이션
+python -m brain_disorder_simulation.disorders.depression.depression_simulator
+
+# 통합 시뮬레이터
+python -m brain_disorder_simulation.unified.unified_simulator
+```
+
+### Python 코드에서 사용
+
+```python
+# ADHD 시뮬레이션
+from brain_disorder_simulation.disorders.adhd import ADHDSimulator
 simulator = ADHDSimulator(age=15, gender='male')
-results = simulator.simulate_full_adhd_assessment(scenario='adhd')
+results = simulator.simulate_full_adhd_assessment()
+
+# 우울증 시뮬레이션
+from brain_disorder_simulation.disorders.depression import DepressionSimulator
+simulator = DepressionSimulator(initial_energy=30.0)
+results = simulator.simulate_full_depression_assessment()
+
+# 통합 시뮬레이터
+from brain_disorder_simulation.unified import UnifiedDisorderSimulator
+simulator = UnifiedDisorderSimulator(seed=42)
+results = simulator.simulate_depression(...)
 ```
 
 자세한 설치 방법은 [INSTALLATION.md](INSTALLATION.md)를 참고하세요.
@@ -62,7 +84,7 @@ Brain Disorder Simulation Engine은 Cookiie Brain Engine의 동역학적 상호�
 - ✅ **인지 동역학의 계산적 시뮬레이션입니다.**
 - ✅ **대학병원 연구실에서 시뮬레이션 도구로 사용 가능합니다.**
 
-**실제 ADHD 진단이 필요한 경우 반드시 의료 전문가(정신건강의학과 전문의)와 상담하세요.**
+**실제 뇌 질환 진단이 필요한 경우 반드시 의료 전문가(정신건강의학과 전문의)와 상담하세요.**
 
 자세한 면책 조항은 [LEGAL_DISCLAIMER.md](LEGAL_DISCLAIMER.md)를 참고하세요.
 
@@ -74,8 +96,9 @@ Brain Disorder Simulation Engine은 Cookiie Brain Engine의 동역학적 상호�
 **현재 버전의 정확한 위치**:
 - ✅ **대학병원 연구실에서 시뮬레이션 도구로 사용 가능**
 - ✅ **연구 및 교육 목적으로 충분히 사용 가능**
-- ✅ **폐루프 동역학 기본 구조 구현 완료**
+- ✅ **기본 폐루프 동역학 구조 구현 완료 (연구용)**
 - ✅ **도파민 시스템 기본 모델 구현 완료**
+- ❌ **임상용 폐루프 (실제 환자 데이터 피드백 포함)는 미구현**
 - ❌ **의료기기/진단 보조 시스템으로는 사용 불가능**
 - ❌ **환자 데이터 연결 및 진단 보조는 불가능**
 
@@ -85,7 +108,7 @@ Brain Disorder Simulation Engine은 Cookiie Brain Engine의 동역학적 상호�
 - ✅ 통계적 검증 (Seed sweep 기반 신뢰도)
 - ✅ 메모리 최적화 (CircularBuffer)
 - ✅ 변동성 분석 (주의력, 움직임 패턴)
-- ✅ **폐루프 동역학 기본 구조** (상태 벡터, 피드백 루프)
+- ✅ **기본 폐루프 동역학 구조 (연구용)** (상태 벡터, 피드백 루프)
 - ✅ **도파민 시스템 기본 모델** (Tonic/Phasic 도파민)
 - ✅ **약물 효과 시뮬레이션 기본 구조** (메틸페니데이트, 아토목세틴)
 - ✅ **동역학 불변식 테스트** (단조성, 게이트 효과, 안정성)
@@ -120,7 +143,7 @@ Brain Disorder Simulation Engine은 Cookiie Brain Engine의 동역학적 상호�
 - ✅ 통계적 검증 (Seed sweep 기반 신뢰도)
 - ✅ 메모리 최적화 (CircularBuffer)
 - ✅ 변동성 분석 (주의력, 움직임 패턴)
-- ✅ **폐루프 동역학** (상태 벡터, 피드백 루프, 확장 가능)
+- ✅ **기본 폐루프 동역학 (연구용)** (상태 벡터, 피드백 루프, 확장 가능)
 - ✅ **도파민 시스템** (Tonic/Phasic 모델, 약물 효과 기본 구조)
 - ✅ **동역학 불변식 테스트** (물리적 타당성 검증)
 - ✅ **실험 리포트 자동 생성** (JSON, Markdown, PNG)
@@ -148,7 +171,8 @@ Brain Disorder Simulation Engine은 Cookiie Brain Engine의 동역학적 상호�
 **의료용 전환을 위한 필수 작업** (6-11개월 소요 예상):
 
 **Phase 1: 핵심 동역학** (1-2개월)
-- ❌ 폐루프 동역학 구조 (현재: 오픈루프)
+- ✅ 기본 폐루프 동역학 구조 (연구용) - **완료**
+- ❌ 임상용 폐루프 (실제 환자 데이터 피드백 포함) - **미구현**
 - ✅ 재현성 보장 (Seed 관리) - **완료**
 - ✅ 상태공간 좌표 출력 - **완료**
 
@@ -170,14 +194,16 @@ Brain Disorder Simulation Engine은 Cookiie Brain Engine의 동역학적 상호�
 
 ---
 
-**현재 버전**: 공학용/연구용 ✅ **사용 가능 (75%)**  
+**현재 버전**: 공학용/연구용 ✅ **사용 가능 (90-95%)**  
 **의료용 확장**: 계획 중 (Phase 1-4) ❌ **사용 불가능 (15%)**
 
 ---
 
 ## 🎯 주요 기능
 
-### 1. ADHD 특화 엔진
+### 1. 질환별 시뮬레이터
+
+#### ADHD (주의력 결핍 과잉행동 장애)
 
 - **AttentionControlEngine**: 주의력 제어 및 측정
   - 주의력 지속 능력 측정
@@ -257,36 +283,69 @@ Brain Disorder Simulation Engine은 Cookiie Brain Engine의 동역학적 상호�
   - PNG 시각화
   - 향후 PDF, HTML 확장 가능
 
-### 2. 시뮬레이션 시나리오
+#### 우울증 (Depression)
+- **에너지 시스템 붕괴**: 초기 에너지 고갈 → 동기 루프 단절 → 완전한 붕괴
+- **부정적 편향**: 부정적 편향 강화 과정, 반추 루프 지속
+- **동기 시스템 붕괴**: 무쾌감증, 보상 민감도 감소, 행동 억제
+- **우울증 특화 태스크**: Motivation Collapse Task, Rumination Persistence Task, Effort-Based Decision Making Task
 
+#### 불안장애 (Anxiety)
+- **위협 과민**: 위협 신호에 대한 과도한 반응
+- **필터링 실패**: Thalamus 필터링 기능 약화
+- **걱정 루프**: 지속적인 걱정 패턴
+
+#### 강박장애 (OCD) - 구현 예정
+- **강박 사고**: 반복적이고 침투적인 사고
+- **강박 행동**: 반복적이고 강제적인 행동
+
+### 2. 연구 모듈
+
+#### 신경전달물질 시스템
+- **도파민 시스템**: Tonic/Phasic 도파민, 보상 민감도
+- **세로토닌 시스템**: SSRI 효과 시뮬레이션
+- **노르에피네프린 시스템**: 각성 수준, 스트레스 반응
+
+#### 생체지표 매핑
+- **fMRI**: 뇌 영역 활성화 패턴 (PFC, Amygdala, DMN 등)
+- **EEG**: 주파수 대역별 파워 스펙트럼 (Alpha, Beta, Theta, Delta, Gamma)
+- **HRV**: 심박 변이도 지표 (RMSSD, SDNN, LF/HF 비율)
+
+#### 임상 스케일
+- **HAM-D**: Hamilton Depression Rating Scale (17항목)
+- **BDI**: Beck Depression Inventory (21항목)
+- **PHQ-9**: Patient Health Questionnaire-9 (9항목)
+
+#### 통계 분석
+- **Seed Sweep**: 다중 시뮬레이션 실행 (100회 이상)
+- **그룹 비교**: t-test, ANOVA, Cohen's d
+- **논문용 데이터**: Table, Figure, LaTeX, CSV 형식
+
+### 3. 시뮬레이션 시나리오
+
+#### ADHD 시나리오
 - **주의력 지속 테스트**: 30초간 주의력 유지 능력 측정
-  - 작업 중요도 기반 주의력 계산
-  - 시간에 따른 주의력 감소 모델링
-  - ADHD 패턴 감지
-  
-- **충동성 테스트**: 4가지 시나리오에서 즉각적 vs 지연된 보상 선택
-  - 할인율(discount rate) 기반 선택 모델
-  - 충동성 점수 계산
-  - ADHD 패턴 감지
-  
-- **과잉행동 테스트**: 10초간 에너지 변동성 측정
-  - 에너지 불일치 분석
-  - 에너지 변동성 계산
-  - ADHD 패턴 감지
+- **충동성 테스트**: 즉각적 vs 지연된 보상 선택
+- **과잉행동 테스트**: 에너지 변동성 측정
+
+#### 우울증 시나리오
+- **동기 붕괴 태스크**: 동기 시스템 붕괴 과정 관측
+- **반추 지속 태스크**: 부정적 사고 루프 지속 분석
+- **노력 기반 의사결정 태스크**: 노력 대 보상 평가
 
 ### 3. 동역학적 상호작용
 
-**오픈루프 모드** (기본):
+**기본 모드** (Cookiie Brain Engine 상호작용):
 - Cookiie Brain Engine의 엔진 간 상호작용 활용
 - Thalamus → PFC → Basal Ganglia 흐름
 - Hypothalamus 에너지 관리
 - 실시간 상태 추적
 
-**폐루프 모드** (2025-01-25 추가):
+**기본 폐루프 모드** (연구용, 2025-01-25 추가):
 - 상태 벡터 기반 동역학
 - 엔진 간 피드백 루프
 - 도파민 시스템 통합
 - 확장 가능한 피드백 루프 등록
+- ⚠️ **연구용**: 실제 환자 데이터 피드백은 포함되지 않음
 
 ---
 
@@ -301,11 +360,11 @@ Brain Disorder Simulation Engine은 Cookiie Brain Engine의 동역학적 상호�
    # Cookiie Brain Engine 설치 방법 참조
    ```
 
-2. **ADHD Simulation Engine 설치**:
+2. **Brain Disorder Simulation Engine 설치**:
    ```bash
    # 저장소 클론
-   git clone https://github.com/qquartsco-svg/adhd_simulation_engine.git
-   cd adhd_simulation_engine
+   git clone https://github.com/qquartsco-svg/Brain_Disorder_Simulation_Engine.git
+   cd Brain_Disorder_Simulation_Engine
 
    # 의존성 설치
    pip install -r requirements.txt
@@ -315,93 +374,102 @@ Brain Disorder Simulation Engine은 Cookiie Brain Engine의 동역학적 상호�
 
 ```bash
 # Cookiie Brain Engine이 상위 디렉토리에 있는 경우
-python3 adhd_simulator.py
+# ADHD 시뮬레이션
+python3 -m brain_disorder_simulation.disorders.adhd.adhd_simulator
+
+# 우울증 시뮬레이션
+python3 -m brain_disorder_simulation.disorders.depression.depression_simulator
+
+# 통합 시뮬레이터
+python3 -m brain_disorder_simulation.unified.unified_simulator
 
 # 또는 환경 변수로 경로 지정
 export COOKIIE_BRAIN_PATH=/path/to/Cookiie_Brain_Engine
-python3 adhd_simulator.py
+python3 -m brain_disorder_simulation.unified.unified_simulator
 ```
 
 ### 코드에서 사용
 
-#### 기본 사용 (재현성 보장)
+#### ADHD 시뮬레이션
 
 ```python
-from adhd_simulator import ADHDSimulator
+from brain_disorder_simulation.disorders.adhd import ADHDSimulator
 
-# 시뮬레이터 초기화 (Seed 지정으로 재현성 보장)
-# 폐루프 동역학 및 도파민 시스템 활성화 (기본값: True)
-simulator = ADHDSimulator(
-    seed=42,
-    enable_closed_loop=True,  # 폐루프 동역학 활성화
-    enable_dopamine=True      # 도파민 시스템 활성화
-)
-
-# 실험 메타데이터 설정
-simulator.set_experiment_metadata({
-    'simulation_type': 'full_assessment',
-    'duration': 30.0
-})
+# 시뮬레이터 초기화
+simulator = ADHDSimulator(seed=42)
 
 # 전체 평가 실행
 results = simulator.simulate_full_adhd_assessment()
 
-# 상태공간 출력 (라벨 대신)
-state_space = simulator.get_state_space_output()
-print(state_space['state_vector'])  # 상태 벡터
-print(state_space['scores'])        # 점수
-print(state_space['variability'])   # 변동성 지표
-
-# 통계적 신뢰도
-print(results['statistical_confidence'])
-
-# 실험 메타데이터 저장
-simulator.experiment_metadata.save('experiment.json')
+# 결과 확인
+print(f"Attention deficit: {results['attention_deficit']:.3f}")
+print(f"Impulsivity: {results['impulsivity']:.3f}")
+print(f"Hyperactivity: {results['hyperactivity']:.3f}")
 ```
 
-#### 개별 테스트
+#### 우울증 시뮬레이션
 
 ```python
-# 주의력 테스트
-attention_results = simulator.simulate_attention_task(duration=30.0)
+from brain_disorder_simulation.disorders.depression import DepressionSimulator
 
-# 충동성 테스트
-scenarios = [
-    {'immediate': 5, 'delayed': 50, 'delay': 10},
-    {'immediate': 10, 'delayed': 100, 'delay': 20},
-]
-impulsivity_results = simulator.simulate_impulsivity_task(scenarios)
+# 시뮬레이터 초기화
+simulator = DepressionSimulator(
+    initial_energy=30.0,
+    recovery_inhibition=0.8
+)
 
-# 과잉행동 테스트
-hyperactivity_results = simulator.simulate_hyperactivity_task(duration=10.0)
+# 전체 평가 실행
+results = simulator.simulate_full_depression_assessment()
 
-# 결과 시각화
-simulator.visualize_results('results.png')
+# 결과 확인
+print(f"Final energy: {results['final_energy']:.3f}")
+print(f"Motivation: {results['motivation']:.3f}")
+print(f"Negative bias: {results['negative_bias']:.3f}")
 ```
 
-#### Seed Sweep (통계적 검증)
+#### 연구 모듈 사용 (신경전달물질, 생체지표, 임상 스케일)
 
 ```python
-from adhd_simulator import ADHDSimulator
-from statistics import StatisticalValidator
+from brain_disorder_simulation.research.depression.neurotransmitters import NeurotransmitterSystem
+from brain_disorder_simulation.research.depression.biomarkers import BiomarkerExtractor
+from brain_disorder_simulation.research.clinical_scales import ClinicalScaleMapper
 
-validator = StatisticalValidator()
+# 신경전달물질 시스템
+nt_system = NeurotransmitterSystem()
+nt_system.update_from_depression(depression_level=0.7)
 
-# 여러 Seed로 시뮬레이션 (통계적 검증)
-for seed in range(100):
-    simulator = ADHDSimulator(seed=seed)
-    results = simulator.simulate_full_adhd_assessment()
-    
-    # 결과 수집
-    validator.add_sweep_result(
-        attention=results['assessment']['scores']['attention_deficit'],
-        impulsivity=results['assessment']['scores']['impulsivity'],
-        hyperactivity=results['assessment']['scores']['hyperactivity']
-    )
+# 생체지표 추출
+extractor = BiomarkerExtractor()
+biomarkers = extractor.extract_all_biomarkers(
+    brain_state=results['brain_state'],
+    energy_state=results['energy_state']
+)
 
-# 통계적 신뢰도 계산
-confidence = validator.calculate_confidence_distribution()
-print(confidence)  # 분포 기반 신뢰도
+# 임상 스케일 매핑
+mapper = ClinicalScaleMapper()
+scales = mapper.map_all_scales(results)
+print(f"HAM-D: {scales['hamd'].total_score}")
+print(f"BDI: {scales['bdi'].total_score}")
+print(f"PHQ-9: {scales['phq9'].total_score}")
+```
+
+#### 통계 분석 (Seed Sweep)
+
+```python
+from brain_disorder_simulation.research.utils.statistical import StatisticalAnalyzer
+
+analyzer = StatisticalAnalyzer()
+
+# Seed Sweep 실행
+sweep_results = analyzer.seed_sweep(
+    DepressionSimulator,
+    n_seeds=100,
+    initial_energy=30.0
+)
+
+# 통계 결과 확인
+print(f"Mean energy: {sweep_results.mean_values['final_energy']:.3f}")
+print(f"95% CI: {sweep_results.ci_95['final_energy']}")
 ```
 
 ---
@@ -532,64 +600,65 @@ Brain_Disorder_Simulation_Engine/
 
 ### Cookiie Brain Engine 경로 설정
 
-ADHD Simulation Engine은 Cookiie Brain Engine에 의존합니다. 다음 방법 중 하나로 경로를 설정할 수 있습니다:
+Brain Disorder Simulation Engine은 Cookiie Brain Engine에 의존합니다. 다음 방법 중 하나로 경로를 설정할 수 있습니다:
 
 1. **기본 경로** (자동 감지):
    - 상위 디렉토리의 `Cookiie_Brain_Engine` 폴더를 자동으로 찾습니다
-   - 예: `ADHD_Simulation_Engine/../Cookiie_Brain_Engine/`
+   - 예: `Brain_Disorder_Simulation_Engine/../Cookiie_Brain_Engine/`
 
 2. **환경 변수로 지정**:
    ```bash
    export COOKIIE_BRAIN_PATH=/path/to/Cookiie_Brain_Engine
-   python3 adhd_simulator.py
+   python3 -m brain_disorder_simulation.unified.unified_simulator
    ```
 
 3. **코드에서 직접 수정**:
-   `adhd_simulator.py` 파일의 경로 설정 부분을 수정하세요.
+   각 시뮬레이터 파일의 경로 설정 부분을 수정하세요.
 
 ---
 
 ## 📝 사용 예시
 
-### 전체 평가 실행
+### ADHD 시뮬레이션
 
 ```python
-from adhd_simulator import ADHDSimulator
+from brain_disorder_simulation.disorders.adhd import ADHDSimulator
 
 simulator = ADHDSimulator()
 results = simulator.simulate_full_adhd_assessment()
 
-print(f"Assessment summary: {results['assessment']}")
-print(f"Pattern confidence (simulation-based): {results['confidence']:.2f}")
-print(f"Attention deficit score: {results['attention_deficit']:.3f}")
-print(f"Impulsivity score: {results['impulsivity']:.3f}")
-print(f"Hyperactivity score: {results['hyperactivity']:.3f}")
+print(f"Attention deficit: {results['attention_deficit']:.3f}")
+print(f"Impulsivity: {results['impulsivity']:.3f}")
+print(f"Hyperactivity: {results['hyperactivity']:.3f}")
 ```
 
-**참고**: `assessment`는 시뮬레이션 기반 동역학적 패턴 평가 결과이며, 의학적 진단이 아닙니다.
-
-### 개별 테스트 실행
+### 우울증 시뮬레이션
 
 ```python
-# 주의력 테스트
-attention_results = simulator.simulate_attention_task(
-    duration=30.0,
-    task_importance=0.8
-)
+from brain_disorder_simulation.disorders.depression import DepressionSimulator
 
-# 충동성 테스트
-scenarios = [
-    {'immediate': 5, 'delayed': 50, 'delay': 10},
-    {'immediate': 10, 'delayed': 100, 'delay': 20},
-]
-impulsivity_results = simulator.simulate_impulsivity_task(scenarios)
+simulator = DepressionSimulator(initial_energy=30.0)
+results = simulator.simulate_full_depression_assessment()
 
-# 과잉행동 테스트
-hyperactivity_results = simulator.simulate_hyperactivity_task(
-    duration=10.0,
-    task_demand=0.5
-)
+print(f"Final energy: {results['final_energy']:.3f}")
+print(f"Motivation: {results['motivation']:.3f}")
+print(f"Negative bias: {results['negative_bias']:.3f}")
 ```
+
+### 연구 모듈 사용
+
+```python
+from brain_disorder_simulation.research.clinical_scales import ClinicalScaleMapper
+
+mapper = ClinicalScaleMapper()
+scales = mapper.map_all_scales(simulation_results)
+
+print(f"HAM-D: {scales['hamd'].total_score}")
+print(f"BDI: {scales['bdi'].total_score}")
+print(f"PHQ-9: {scales['phq9'].total_score}")
+```
+
+**참고**: 모든 결과는 시뮬레이션 기반 동역학적 패턴 평가 결과이며, 의학적 진단이 아닙니다.
 
 ---
 
@@ -600,7 +669,7 @@ hyperactivity_results = simulator.simulate_hyperactivity_task(
 **이 시뮬레이션은 연구 및 교육 목적으로만 사용되어야 합니다.**
 
 - ❌ 실제 의학적 진단 도구가 아닙니다
-- ❌ 실제 ADHD 진단은 전문의와 상담해야 합니다
+- ❌ 실제 뇌 질환 진단은 전문의와 상담해야 합니다
 - ✅ 시뮬레이션 결과는 참고용입니다
 - ✅ 연구 및 교육 목적으로 사용 가능합니다
 - ✅ 알고리즘 개발 및 테스트 목적
@@ -617,7 +686,7 @@ hyperactivity_results = simulator.simulate_hyperactivity_task(
 - ✅ 재현성 보장 시스템 (Seed 관리, 실험 메타데이터)
 - ✅ 상태공간 좌표 출력
 - ✅ 통계적 검증 (Seed sweep)
-- ✅ **폐루프 동역학 기본 구조** (상태 벡터, 피드백 루프)
+- ✅ **기본 폐루프 동역학 구조 (연구용)** (상태 벡터, 피드백 루프)
 - ✅ **도파민 시스템 기본 모델** (Tonic/Phasic)
 - ✅ **약물 효과 시뮬레이션 기본 구조** (메틸페니데이트, 아토목세틴)
 - ✅ **동역학 불변식 테스트** (물리적 타당성 검증)
@@ -668,10 +737,11 @@ hyperactivity_results = simulator.simulate_hyperactivity_task(
 ### 의료용 확장
 
 **✅ 완료된 기능** (코드 레벨):
-1. ✅ **폐루프 동역학** (기본 구조 완료)
+1. ✅ **기본 폐루프 동역학 (연구용 구조 완료)**
    - 엔진 간 피드백 루프
    - 상태 벡터 기반 동역학
    - 확장 가능한 구조
+   - ❌ 임상용 폐루프 (실제 환자 데이터 피드백 포함) - 미구현
 
 2. ✅ **재현성 시스템** (완료)
    - Seed 관리 (ReproducibleRNG)
