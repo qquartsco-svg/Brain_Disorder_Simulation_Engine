@@ -1,6 +1,8 @@
-# ADHD Simulation Engine
+# Brain Disorder Simulation Engine
 
-**Cookiie Brain Engine 기반 ADHD 전용 시뮬레이션 시스템**
+**Cookiie Brain Engine 기반 뇌 질환 시뮬레이션 통합 시스템**
+
+ADHD, 우울증, 불안장애, 강박장애 등 다양한 뇌 질환 메커니즘 시뮬레이션
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
@@ -39,7 +41,14 @@ results = simulator.simulate_full_adhd_assessment(scenario='adhd')
 
 ## 📋 개요
 
-ADHD Simulation Engine은 Cookiie Brain Engine의 동역학적 상호작용을 활용하여 ADHD의 주요 특성(주의력 결핍, 충동성, 과잉행동)을 시뮬레이션하는 전용 엔진입니다.
+Brain Disorder Simulation Engine은 Cookiie Brain Engine의 동역학적 상호작용을 활용하여 다양한 뇌 질환의 메커니즘을 시뮬레이션하는 통합 엔진입니다.
+
+### 지원하는 뇌 질환
+
+- ✅ **ADHD** (주의력 결핍 과잉행동 장애): 주의력 결핍, 충동성, 과잉행동
+- ✅ **우울증** (Depression): 에너지 붕괴, 동기 루프 단절, 부정적 편향
+- ✅ **불안장애** (Anxiety): 위협 과민, 필터링 실패, 걱정 루프
+- ⏳ **강박장애** (OCD): 강박 사고, 강박 행동 (구현 예정)
 
 **⚠️ ⚠️ ⚠️ 매우 중요한 안내 ⚠️ ⚠️ ⚠️**:
 
@@ -467,29 +476,41 @@ print(confidence)  # 분포 기반 신뢰도
 ## 📁 프로젝트 구조
 
 ```
-ADHD_Simulation_Engine/
-├── adhd_engines.py          # ADHD 특화 엔진
-├── adhd_simulator.py        # 메인 시뮬레이터
-├── reproducibility.py       # 재현성 보장 시스템
-├── statistics.py            # 통계적 검증 모듈
-├── dopamine_system.py       # 도파민 시스템 모델 (2025-01-25 추가)
-├── closed_loop_dynamics.py # 폐루프 동역학 시스템 (2025-01-25 추가)
-├── report_generator.py      # 실험 리포트 자동 생성 (2025-01-25 추가)
-├── dynamics_invariant_tests.py # 동역학 불변식 테스트 (2025-01-25 추가)
-├── __init__.py              # 모듈 초기화
-├── README.md                # 이 파일
-├── requirements.txt         # 의존성 목록
-├── LICENSE                  # MIT 라이선스
-├── .gitignore              # Git 무시 파일
+Brain_Disorder_Simulation_Engine/
+├── brain_disorder_simulation/     # 통합 시뮬레이션 패키지
+│   ├── disorders/                # 질환별 모듈
+│   │   ├── adhd/                 # ADHD 시뮬레이션
+│   │   ├── depression/           # 우울증 시뮬레이션
+│   │   ├── anxiety/              # 불안장애 시뮬레이션
+│   │   └── ocd/                  # 강박장애 시뮬레이션 (구현 예정)
+│   ├── research/                 # 연구 모듈
+│   │   ├── depression/           # 우울증 연구 도구
+│   │   │   ├── neurotransmitters.py  # 신경전달물질 시스템
+│   │   │   ├── biomarkers.py         # 생체지표 매핑
+│   │   │   └── validation.py         # 검증 시스템
+│   │   ├── clinical_scales.py   # 임상 스케일 (HAM-D, BDI, PHQ-9)
+│   │   └── utils/
+│   │       ├── statistical.py   # 통계 분석
+│   │       └── reporting.py     # 리포트 생성
+│   ├── unified/                  # 통합 시뮬레이터
+│   └── utils/                    # 유틸리티
+├── adhd_simulation/              # 기존 ADHD 모듈 (호환성 유지)
+├── README.md                     # 이 파일
+├── requirements.txt              # 의존성 목록
+├── LICENSE                       # MIT 라이선스
+├── .gitignore                    # Git 무시 파일
 ├── PHAM_BLOCKCHAIN_SIGNATURE.md  # PHAM 서명
-├── LEGAL_DISCLAIMER.md          # 면책 조항
+├── CHANGELOG.md                  # 변경 이력
+├── ENGINE_CAPABILITIES.md        # 엔진 기능 설명
+├── GITHUB_READINESS_REPORT.md    # GitHub 준비 상태 리포트
+├── LEGAL_DISCLAIMER.md           # 면책 조항
 ├── INSTALLATION.md               # 설치 가이드
-├── docs/                         # 상세 문서 디렉토리
-│   ├── deployment/               # 배포 관련 문서
-│   ├── medical/                   # 의료 관련 문서
-│   ├── analysis/                 # 분석 문서
-│   ├── phase/                    # Phase별 보고서
-│   └── guides/                   # 가이드 문서
+└── docs/                         # 상세 문서 디렉토리
+    ├── deployment/               # 배포 관련 문서
+    ├── medical/                  # 의료 관련 문서
+    ├── analysis/                 # 분석 문서
+    ├── phase/                    # Phase별 보고서
+    └── guides/                   # 가이드 문서
 ```
 
 ---

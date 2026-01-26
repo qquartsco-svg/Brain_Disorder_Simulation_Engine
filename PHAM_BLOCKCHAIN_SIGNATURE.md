@@ -26,13 +26,17 @@ PHAM Blockchain Signature
 Proof of Honest Authorship & Merit
 ================================================================================
 
-Project: ADHD_Simulation_Engine
-Repository: https://github.com/qquartsco-svg/ADHD_Simulation_Engine
+Project: Brain_Disorder_Simulation_Engine (통합)
+Repository: https://github.com/qquartsco-svg/adhd_simulation_engine (변경 예정)
 Author: GNJz (Qquarts)
 Contribution: 100% (Initial Development)
-Date: 2025-01-25
+Date: 2025-01-27
 Version: 1.0.0
 License: MIT
+
+통합 내용:
+- ADHD_Simulation_Engine + Brain_Disorder_Simulation_Engine
+- 모든 뇌 질환 시뮬레이션 통합 (ADHD, 우울증, 불안장애, 강박장애 등)
 
 PHAM Rule: GNJz contribution cap 6% (for future contributions)
 
