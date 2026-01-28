@@ -9,20 +9,39 @@ ADHD, 우울증, 불안장애, 강박장애 등 다양한 뇌 질환 메커니�
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 
+## ⚠️ 필수 사전 요구사항 (Pre-requisite)
+
+**본 프로젝트는 Cookiie Brain Engine에 의존합니다.**
+
+- **Cookiie Brain Engine**은 별도의 연구용 계산 모델로서 본 패키지의 일부가 아닙니다.
+- 해당 엔진이 설치되어 있어야 본 프로젝트를 사용할 수 있습니다.
+- 설치 방법: [Cookiie Brain Engine 저장소](https://github.com/qquartsco-svg/cookiieBrain_alpha)
+
+**의존성 명확화**:
+- 본 프로젝트는 Cookiie Brain Engine의 동역학적 상호작용을 활용합니다.
+- Cookiie Brain Engine은 독립적인 연구 프로젝트입니다.
+- 통합 의료 시스템이 아닙니다.
+
+---
+
 ## 🚀 빠른 시작
 
 ### 설치
 
 ```bash
-# 저장소 클론
+# 1. Cookiie Brain Engine 먼저 설치 (필수)
+# https://github.com/qquartsco-svg/cookiieBrain_alpha
+# 위 저장소의 설치 방법을 따라 Cookiie Brain Engine을 설치하세요.
+
+# 2. 저장소 클론
 git clone https://github.com/qquartsco-svg/Brain_Disorder_Simulation_Engine.git
 cd Brain_Disorder_Simulation_Engine
 
-# 패키지 설치
+# 3. 패키지 설치
 pip install -e .
 
-# Cookiie Brain Engine 설치 (의존성)
-# https://github.com/qquartsco-svg/cookiieBrain_alpha
+# 4. 의존성 설치
+pip install -r requirements.txt
 ```
 
 ### 실행 예시
@@ -33,6 +52,9 @@ python -m brain_disorder_simulation.disorders.adhd.adhd_simulator
 
 # 우울증 시뮬레이션
 python -m brain_disorder_simulation.disorders.depression.depression_simulator
+
+# PTSD 시뮬레이션
+python -m brain_disorder_simulation.disorders.ptsd.ptsd_simulator
 
 # 통합 시뮬레이터
 python -m brain_disorder_simulation.unified.unified_simulator
@@ -51,10 +73,21 @@ from brain_disorder_simulation.disorders.depression import DepressionSimulator
 simulator = DepressionSimulator(initial_energy=30.0)
 results = simulator.simulate_full_depression_assessment()
 
+# PTSD 시뮬레이션
+from brain_disorder_simulation.disorders.ptsd import PTSDSimulator
+simulator = PTSDSimulator(trauma_intensity=0.8, suppression_failure=0.6)
+results = simulator.simulate_full_ptsd_assessment()
+
+# PTSD 시뮬레이션
+from brain_disorder_simulation.disorders.ptsd import PTSDSimulator
+simulator = PTSDSimulator(trauma_intensity=0.8, suppression_failure=0.6)
+results = simulator.simulate_full_ptsd_assessment()
+
 # 통합 시뮬레이터
 from brain_disorder_simulation.unified import UnifiedDisorderSimulator
 simulator = UnifiedDisorderSimulator(seed=42)
 results = simulator.simulate_depression(...)
+results = simulator.simulate_ptsd(...)
 ```
 
 자세한 설치 방법은 [INSTALLATION.md](INSTALLATION.md)를 참고하세요.
@@ -70,6 +103,7 @@ Brain Disorder Simulation Engine은 Cookiie Brain Engine의 동역학적 상호�
 - ✅ **ADHD** (주의력 결핍 과잉행동 장애): 주의력 결핍, 충동성, 과잉행동
 - ✅ **우울증** (Depression): 에너지 붕괴, 동기 루프 단절, 부정적 편향
 - ✅ **불안장애** (Anxiety): 위협 과민, 필터링 실패, 걱정 루프
+- ✅ **PTSD** (외상 후 스트레스 장애): 외상 기억 침입, 회피, 과각성, 부정적 인지 변화
 - ⏳ **강박장애** (OCD): 강박 사고, 강박 행동 (구현 예정)
 
 **⚠️ ⚠️ ⚠️ 매우 중요한 안내 ⚠️ ⚠️ ⚠️**:
@@ -83,6 +117,11 @@ Brain Disorder Simulation Engine은 Cookiie Brain Engine의 동역학적 상호�
 - ✅ **연구 및 교육 목적으로만 사용되어야 합니다.**
 - ✅ **인지 동역학의 계산적 시뮬레이션입니다.**
 - ✅ **대학병원 연구실에서 시뮬레이션 도구로 사용 가능합니다.**
+
+**의존성 및 책임 분리**:
+- 본 프로젝트는 **Cookiie Brain Engine**에 의존하며, 해당 엔진은 별도의 연구용 계산 모델입니다.
+- Cookiie Brain Engine은 본 패키지의 일부가 아니며, 독립적으로 관리됩니다.
+- 본 프로젝트는 통합 의료 시스템이 아닙니다.
 
 **실제 뇌 질환 진단이 필요한 경우 반드시 의료 전문가(정신건강의학과 전문의)와 상담하세요.**
 
@@ -294,6 +333,12 @@ Brain Disorder Simulation Engine은 Cookiie Brain Engine의 동역학적 상호�
 - **필터링 실패**: Thalamus 필터링 기능 약화
 - **걱정 루프**: 지속적인 걱정 패턴
 
+#### PTSD (외상 후 스트레스 장애)
+- **외상 기억 침입**: 반복적, 침투적 외상 기억, 플래시백
+- **회피 패턴**: 외상 관련 자극 회피, 감정적 마비
+- **과각성**: 과도한 경계 상태, 수면 장애, 집중력 저하
+- **부정적 인지 변화**: 자기 비난, 죄책감, 수치심, 기억 왜곡
+
 #### 강박장애 (OCD) - 구현 예정
 - **강박 사고**: 반복적이고 침투적인 사고
 - **강박 행동**: 반복적이고 강제적인 행동
@@ -331,6 +376,11 @@ Brain Disorder Simulation Engine은 Cookiie Brain Engine의 동역학적 상호�
 - **동기 붕괴 태스크**: 동기 시스템 붕괴 과정 관측
 - **반추 지속 태스크**: 부정적 사고 루프 지속 분석
 - **노력 기반 의사결정 태스크**: 노력 대 보상 평가
+
+#### PTSD 시나리오
+- **외상 기억 침입**: 외상 기억의 강화 및 침입 패턴
+- **회피 학습**: 외상 관련 자극에 대한 회피 강화
+- **과각성 반응**: 스트레스 반응 과다, 필터링 실패
 
 ### 3. 동역학적 상호작용
 
@@ -550,6 +600,7 @@ Brain_Disorder_Simulation_Engine/
 │   │   ├── adhd/                 # ADHD 시뮬레이션
 │   │   ├── depression/           # 우울증 시뮬레이션
 │   │   ├── anxiety/              # 불안장애 시뮬레이션
+│   │   ├── ptsd/                 # PTSD 시뮬레이션
 │   │   └── ocd/                  # 강박장애 시뮬레이션 (구현 예정)
 │   ├── research/                 # 연구 모듈
 │   │   ├── depression/           # 우울증 연구 도구

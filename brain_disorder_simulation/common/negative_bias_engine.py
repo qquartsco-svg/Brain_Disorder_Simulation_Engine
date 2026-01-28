@@ -2,16 +2,21 @@
 부정적 편향 엔진 (공통)
 
 우울증과 불안장애에서 공통으로 사용되는 부정적 편향 메커니즘
+
+⚠️ 리팩터링: 이 엔진은 내부적으로 NegativeBiasLoop를 사용합니다.
 """
 
 import numpy as np
 from typing import Dict, Optional
 from dataclasses import dataclass
 
+# 루프 라이브러리 import
+from .loops.negative_bias_loop import NegativeBiasLoop
+
 
 @dataclass
 class NegativeBiasState:
-    """부정적 편향 상태"""
+    """부정적 편향 상태 (호환성 유지)"""
     negative_amplification: float = 1.0  # 부정적 자극 증폭 배수
     positive_dampening: float = 1.0      # 긍정적 자극 감쇠 배수
     threat_sensitivity: float = 1.0       # 위협 민감도
@@ -46,7 +51,13 @@ class NegativeBiasEngine:
         self.negative_bias_strength = np.clip(negative_bias_strength, 0.0, 1.0)
         self.rng = rng if rng is not None else np.random.default_rng()
         
-        # 상태 초기화
+        # 루프 라이브러리 사용
+        self.loop = NegativeBiasLoop(
+            initial_bias_strength=negative_bias_strength,
+            rng=rng
+        )
+        
+        # 상태 초기화 (호환성 유지)
         self.state = NegativeBiasState()
         
         # 파라미터
@@ -62,20 +73,19 @@ class NegativeBiasEngine:
         self._update_state_from_strength()
     
     def _update_state_from_strength(self):
-        """편향 강도에 따라 상태 업데이트"""
-        strength = self.negative_bias_strength
+        """편향 강도에 따라 상태 업데이트 (루프에서 상태 동기화)"""
+        # 루프 강도 업데이트
+        loop_strength = self.loop.get_strength()
+        if loop_strength > 0:
+            self.negative_bias_strength = loop_strength
         
-        # 부정적 자극 증폭 (1.0 ~ 2.5)
-        self.state.negative_amplification = 1.0 + (strength * 1.5)
-        
-        # 긍정적 자극 감쇠 (1.0 ~ 0.3)
-        self.state.positive_dampening = 1.0 - (strength * 0.7)
-        
-        # 위협 민감도 증가 (1.0 ~ 2.0)
-        self.state.threat_sensitivity = 1.0 + (strength * 1.0)
-        
-        # 기억 편향 (0.0 ~ 0.8)
-        self.state.memory_bias = strength * 0.8
+        # 루프 상태에서 동기화
+        bias_state = self.loop.bias_state
+        self.state.negative_amplification = bias_state.negative_amplification
+        self.state.positive_dampening = bias_state.positive_dampening
+        self.state.threat_sensitivity = bias_state.threat_sensitivity
+        self.state.memory_bias = bias_state.memory_bias
+        self.state.rumination_strength = bias_state.rumination_strength
     
     def process_stimulus(self, 
                         stimulus_valence: float,
@@ -92,45 +102,11 @@ class NegativeBiasEngine:
         Returns:
             처리된 자극 정보
         """
-        # 변수 초기화
-        amplified_intensity = stimulus_intensity
-        dampened_intensity = stimulus_intensity
-        perceived_valence = stimulus_valence
+        # 루프를 사용하여 자극 처리
+        result = self.loop.process_stimulus(stimulus_valence, stimulus_intensity)
         
-        # 부정적 자극 처리
-        if stimulus_valence < 0:
-            # 부정적 자극 증폭
-            amplified_intensity = stimulus_intensity * self.state.negative_amplification
-            perceived_valence = stimulus_valence * self.state.negative_amplification
-            
-            # 반추 강화 (부정적 자극에 대한 반복적 사고)
-            self.state.rumination_strength = min(1.0, 
-                self.state.rumination_strength + 0.1 * amplified_intensity)
-            
-            # 기억 편향 업데이트
-            self.state.memory_bias = min(1.0,
-                self.state.memory_bias + 0.05 * amplified_intensity)
-        
-        # 긍정적 자극 처리
-        elif stimulus_valence > 0:
-            # 긍정적 자극 감쇠
-            dampened_intensity = stimulus_intensity * self.state.positive_dampening
-            perceived_valence = stimulus_valence * self.state.positive_dampening
-            
-            # 반추 약화 (긍정적 자극은 빠르게 사라짐)
-            self.state.rumination_strength *= self.rumination_decay
-        
-        # 중립 자극 처리
-        else:
-            # 중립 자극도 약간 부정적으로 해석될 수 있음
-            if self.state.rumination_strength > 0.3:
-                perceived_valence = -0.1 * self.state.rumination_strength
-                dampened_intensity = stimulus_intensity
-                amplified_intensity = stimulus_intensity
-            else:
-                perceived_valence = 0.0
-                dampened_intensity = stimulus_intensity
-                amplified_intensity = stimulus_intensity
+        # 상태 동기화
+        self._update_state_from_strength()
         
         # 위협 감지 (부정적 자극에 대한 과민 반응)
         threat_detected = False
@@ -141,20 +117,14 @@ class NegativeBiasEngine:
             if threat_probability > self.threat_threshold_base:
                 threat_detected = True
         
-        # 최종 강도 결정
-        if stimulus_valence < 0:
-            final_intensity = amplified_intensity
-        elif stimulus_valence > 0:
-            final_intensity = dampened_intensity
-        else:
-            final_intensity = stimulus_intensity
-        
+        # 결과 반환 (호환성 유지)
         return {
-            'perceived_valence': np.clip(perceived_valence, -1.0, 1.0),
-            'perceived_intensity': final_intensity,
+            'perceived_valence': result['perceived_valence'],
+            'perceived_intensity': result['perceived_intensity'],
             'threat_detected': threat_detected,
-            'rumination_triggered': stimulus_valence < 0,
-            'bias_applied': True
+            'rumination_triggered': result.get('rumination_triggered', False),
+            'bias_applied': result.get('bias_applied', True),
+            'loop_triggered': result.get('loop_triggered', False)
         }
     
     def update_rumination(self, dt: float = 0.1):
@@ -164,11 +134,11 @@ class NegativeBiasEngine:
         Args:
             dt: 시간 간격
         """
-        # 반추는 시간이 지나면서 점차 감쇠하지만, 완전히 사라지지 않음
-        self.state.rumination_strength *= (self.rumination_decay ** (dt * 10))
+        # 루프 업데이트
+        self.loop.update(dt)
         
-        # 기억 편향도 점차 감쇠
-        self.state.memory_bias *= (self.memory_bias_decay ** (dt * 10))
+        # 상태 동기화
+        self._update_state_from_strength()
     
     def get_bias_score(self) -> float:
         """
@@ -177,12 +147,6 @@ class NegativeBiasEngine:
         Returns:
             편향 점수 (높을수록 부정적 편향 강함)
         """
-        score = (
-            (self.state.negative_amplification - 1.0) / 1.5 * 0.3 +
-            (1.0 - self.state.positive_dampening) / 0.7 * 0.3 +
-            (self.state.threat_sensitivity - 1.0) / 1.0 * 0.2 +
-            self.state.rumination_strength * 0.1 +
-            self.state.memory_bias * 0.1
-        )
-        return np.clip(score, 0.0, 1.0)
+        # 루프에서 점수 가져오기
+        return self.loop.get_bias_score()
 

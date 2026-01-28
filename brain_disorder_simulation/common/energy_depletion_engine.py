@@ -2,11 +2,16 @@
 에너지 고갈 엔진 (공통)
 
 우울증과 불안장애에서 공통으로 나타나는 에너지 고갈 메커니즘
+
+⚠️ 리팩터링: 이 엔진은 내부적으로 EnergyCollapseLoop를 사용합니다.
 """
 
 import numpy as np
 from typing import Dict, Optional
 from dataclasses import dataclass
+
+# 루프 라이브러리 import
+from .loops.energy_collapse_loop import EnergyCollapseLoop
 
 
 @dataclass
@@ -46,7 +51,14 @@ class EnergyDepletionEngine:
         self.depletion_rate = np.clip(depletion_rate, 0.0, 1.0)
         self.rng = rng if rng is not None else np.random.default_rng()
         
-        # 상태 초기화
+        # 루프 라이브러리 사용
+        self.loop = EnergyCollapseLoop(
+            initial_energy=100.0,
+            initial_depletion_rate=depletion_rate,
+            rng=rng
+        )
+        
+        # 상태 초기화 (호환성 유지)
         self.state = EnergyDepletionState()
         
         # 파라미터
@@ -58,21 +70,19 @@ class EnergyDepletionEngine:
         self._update_state_from_rate()
     
     def _update_state_from_rate(self):
-        """고갈 속도에 따라 상태 업데이트"""
-        rate = self.depletion_rate
+        """고갈 속도에 따라 상태 업데이트 (루프에서 상태 동기화)"""
+        # 루프 강도 업데이트
+        loop_strength = self.loop.get_strength()
+        if loop_strength > 0:
+            self.depletion_rate = loop_strength
         
-        # 에너지 고갈 속도 증가 (0.1 ~ 0.5)
-        self.state.energy_depletion_rate = self.base_depletion + (rate * 0.4)
-        
-        # 회복 속도 감소 (0.05 ~ 0.01)
-        self.state.recovery_rate = self.base_recovery - (rate * 0.04)
-        self.state.recovery_rate = max(0.01, self.state.recovery_rate)
-        
-        # 수면 질 저하 (1.0 ~ 0.3)
-        self.state.sleep_quality = 1.0 - (rate * 0.7)
-        
-        # 일주기 리듬 혼란 (1.0 ~ 0.4)
-        self.state.circadian_rhythm = 1.0 - (rate * 0.6)
+        # 루프 상태에서 동기화
+        energy_state = self.loop.energy_state
+        self.state.current_energy = energy_state.current_energy
+        self.state.energy_depletion_rate = energy_state.energy_depletion_rate
+        self.state.recovery_rate = energy_state.recovery_rate
+        self.state.sleep_quality = energy_state.sleep_quality
+        self.state.circadian_rhythm = energy_state.circadian_rhythm
     
     def update_energy(self, 
                      cognitive_load: float = 0.0,
@@ -89,37 +99,20 @@ class EnergyDepletionEngine:
         Returns:
             에너지 상태 정보
         """
-        # 에너지 소비 (인지 부하와 스트레스에 비례)
-        consumption = (self.state.energy_depletion_rate * 
-                      (1.0 + cognitive_load * 0.5 + stress_level * 0.5) * dt)
+        # 루프를 사용하여 에너지 업데이트
+        result = self.loop.update_energy(cognitive_load, stress_level, dt)
         
-        # 회복 (수면 질과 일주기 리듬에 영향받음)
-        recovery = (self.state.recovery_rate * 
-                   self.state.sleep_quality * 
-                   self.state.circadian_rhythm * dt)
+        # 상태 동기화
+        self._update_state_from_rate()
         
-        # 에너지 변화
-        energy_change = recovery - consumption
-        
-        # 에너지 업데이트
-        self.state.current_energy = np.clip(
-            self.state.current_energy + energy_change,
-            0.0, self.base_energy
-        )
-        
-        # 에너지가 낮으면 회복 속도도 더 느려짐 (악순환)
-        if self.state.current_energy < 30.0:
-            effective_recovery = recovery * 0.5
-        else:
-            effective_recovery = recovery
-        
+        # 결과 반환 (호환성 유지)
         return {
-            'current_energy': self.state.current_energy,
-            'energy_change': energy_change,
-            'consumption': consumption,
-            'recovery': effective_recovery,
-            'depletion_rate': self.state.energy_depletion_rate,
-            'recovery_rate': self.state.recovery_rate
+            'current_energy': result['current_energy'],
+            'energy_change': result['energy_change'],
+            'consumption': result['consumption'],
+            'recovery': result['recovery'],
+            'depletion_rate': result['depletion_rate'],
+            'recovery_rate': result['recovery_rate']
         }
     
     def get_energy_score(self) -> float:
@@ -129,14 +122,6 @@ class EnergyDepletionEngine:
         Returns:
             에너지 점수 (낮을수록 에너지 고갈)
         """
-        energy_ratio = self.state.current_energy / self.base_energy
-        recovery_ratio = self.state.recovery_rate / self.base_recovery
-        
-        score = (
-            energy_ratio * 0.5 +
-            recovery_ratio * 0.2 +
-            self.state.sleep_quality * 0.2 +
-            self.state.circadian_rhythm * 0.1
-        )
-        return np.clip(score, 0.0, 1.0)
+        # 루프에서 점수 가져오기
+        return self.loop.get_energy_score()
 
