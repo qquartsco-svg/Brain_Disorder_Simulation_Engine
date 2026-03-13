@@ -55,8 +55,18 @@ from ..common.loops import (
     NegativeBiasLoop,
     HyperarousalLoop,
     ControlFailureLoop,
-    EnergyCollapseLoop
+    EnergyCollapseLoop,
+    MotivationCollapseLoop,
+    IntrusiveMemoryLoop,
+    AvoidanceReinforcementLoop
 )
+# Inference state / emergence analysis
+from .inference_state_analysis import (
+    compute_normative_zscores,
+    compute_optimized_inference_axes,
+    compute_emergence_index
+)
+
 
 # 질환별 특화 엔진
 from ..disorders.depression.motivation_engine import MotivationEngine
@@ -179,18 +189,20 @@ class UnifiedDisorderSimulator:
             rng=self.rng.get_rng('energy_depletion')
         )
         
-        # 루프 추적 초기화
-        self.active_loops = {
-            'negative_bias': self.common_engines['negative_bias'].loop,
-            'control_failure': self.common_engines['cognitive_control'].loop,
-            'energy_collapse': self.common_engines['energy_depletion'].loop
-        }
-        self.loop_history = []
-        
+        # 동기 엔진 초기화
         self.disorder_engines['motivation'] = MotivationEngine(
             motivation_deficit=motivation_deficit,
             rng=self.rng.get_rng('motivation')
         )
+        
+        # 루프 추적 초기화
+        self.active_loops = {
+            'negative_bias': self.common_engines['negative_bias'].loop,
+            'control_failure': self.common_engines['cognitive_control'].loop,
+            'energy_collapse': self.common_engines['energy_depletion'].loop,
+            'motivation_collapse': self.disorder_engines['motivation'].loop  # ⭐ 추가
+        }
+        self.loop_history = []
         
         # 시뮬레이션 실행
         self.start_time = time.time()
@@ -242,6 +254,8 @@ class UnifiedDisorderSimulator:
                     reward_value=reward['value'],
                     effort_required=reward['effort']
                 )
+                # 동기 엔진 업데이트 (루프 동역학)
+                self.disorder_engines['motivation'].update(dt)
             
             # 상태 업데이트
             self.common_engines['negative_bias'].update_rumination(dt)
@@ -268,7 +282,8 @@ class UnifiedDisorderSimulator:
                     'time': t,
                     'negative_bias_loop': self.active_loops['negative_bias'].get_strength(),
                     'control_failure_loop': self.active_loops['control_failure'].get_strength(),
-                    'energy_collapse_loop': self.active_loops['energy_collapse'].get_strength()
+                    'energy_collapse_loop': self.active_loops['energy_collapse'].get_strength(),
+                    'motivation_collapse_loop': self.active_loops['motivation_collapse'].get_strength()  # ⭐ 추가
                 }
                 self.loop_history.append(loop_state)
         
@@ -355,10 +370,13 @@ class UnifiedDisorderSimulator:
         
         # PTSD 엔진 초기화
         self.disorder_engines['intrusive_memory'] = IntrusiveMemoryEngine(
+            initial_trauma_intensity=trauma_intensity,
+            initial_suppression_failure=suppression_failure,
             rng=self.rng.get_rng('intrusive_memory')
         )
         
         self.disorder_engines['avoidance'] = AvoidanceEngine(
+            initial_avoidance_strength=avoidance_strength,
             rng=self.rng.get_rng('avoidance')
         )
         
@@ -377,8 +395,19 @@ class UnifiedDisorderSimulator:
             initial_fear=trauma_intensity * 0.9
         )
         
-        # 억제 실패율 설정
-        self.disorder_engines['intrusive_memory'].suppression_failure_rate = suppression_failure
+        # 루프 추적 초기화
+        self.active_loops = {
+            'intrusive_memory': self.disorder_engines['intrusive_memory'].loop,
+            'avoidance': self.disorder_engines['avoidance'].loop,
+            'hyperarousal': self.common_engines.get('hyperarousal', None)
+        }
+        # HyperarousalLoop는 공통 엔진이 아니므로 별도 처리 필요
+        # 일단 IntrusiveMemoryLoop와 AvoidanceReinforcementLoop만 추적
+        self.active_loops = {
+            'intrusive_memory': self.disorder_engines['intrusive_memory'].loop,
+            'avoidance': self.disorder_engines['avoidance'].loop
+        }
+        self.loop_history = []
         
         # 시뮬레이션 실행
         self.start_time = time.time()
@@ -460,6 +489,9 @@ class UnifiedDisorderSimulator:
                 pfc_control=1.0 - suppression_failure
             )
             
+            # 회피 엔진 업데이트
+            self.disorder_engines['avoidance'].update(dt)
+            
             # 데이터 기록 (1초마다)
             if step % 10 == 0:
                 self.simulation_data['timestamps'].append(t)
@@ -475,9 +507,24 @@ class UnifiedDisorderSimulator:
                 self.simulation_data['negative_cognition_scores'].append(
                     self.disorder_engines['negative_cognition'].current_negative_bias
                 )
+                
+                # 루프 상태 기록
+                loop_state = {
+                    'time': t,
+                    'intrusive_memory_loop': self.active_loops['intrusive_memory'].get_strength(),
+                    'avoidance_loop': self.active_loops['avoidance'].get_strength()
+                }
+                self.loop_history.append(loop_state)
         
         # 결과 분석
         results = self._analyze_ptsd_patterns()
+        
+        # 루프 기반 패턴 해석 추가
+        loop_analysis = self._analyze_loop_combinations()
+        results['loop_analysis'] = loop_analysis
+        
+        # 최근 결과 저장 (explain_patterns에서 사용)
+        self.last_results = results
         
         print(f"\n✅ PTSD 시뮬레이션 완료!")
         print(f"   종합 패턴: {results['overall_pattern']}")
@@ -485,8 +532,152 @@ class UnifiedDisorderSimulator:
         print(f"   회피 수준: {results['mean_avoidance']:.3f}")
         print(f"   과각성 수준: {results['mean_arousal']:.3f}")
         
+        # 루프 기반 해석 출력
+        print("\n" + self.explain_patterns(results))
+        
         return results
     
+    def simulate_adhd(self,
+                     duration: float = 300.0,
+                     task_importance: float = 0.6) -> Dict:
+        """
+        ADHD 시뮬레이션
+
+        Args:
+            duration: 시뮬레이션 지속 시간
+            task_importance: 기본 과제 중요도
+
+        Returns:
+            시뮬레이션 결과
+        """
+        print(f"\n{'='*70}")
+        print("🔬 ADHD 메커니즘 시뮬레이션")
+        print(f"{'='*70}")
+        print("목적: ADHD 패턴의 원인 분석")
+        print(f"지속 시간: {duration}초")
+        print(f"{'='*70}\n")
+
+        # ADHD 엔진 초기화
+        self.disorder_engines['attention'] = AttentionControlEngine(
+            rng=self.rng.get_rng('adhd_attention')
+        )
+        self.disorder_engines['impulse'] = ImpulseControlEngine(
+            rng=self.rng.get_rng('adhd_impulse')
+        )
+        self.disorder_engines['hyperactivity'] = HyperactivityEngine(
+            rng=self.rng.get_rng('adhd_hyperactivity')
+        )
+
+        # 루프 추적 초기화
+        self.active_loops = {
+            'attention_instability': self.disorder_engines['attention'].loop,
+            'reward_prediction_error': self.disorder_engines['impulse'].loop
+        }
+        self.loop_history = []
+
+        # 시뮬레이션 실행
+        self.start_time = time.time()
+        dt = 0.1
+        steps = int(duration / dt)
+
+        self.simulation_data = {
+            'timestamps': [],
+            'attention_scores': [],
+            'impulse_scores': [],
+            'hyperactivity_scores': [],
+            'pattern_observations': []
+        }
+
+        current_energy = 70.0
+
+        for step in range(steps):
+            t = step * dt
+
+            # 1초마다 과제/자극 업데이트
+            if step % 10 == 0:
+                # 랜덤 distraction 생성
+                rng = self.rng.get_rng('adhd_distraction')
+                distractions = []
+                n_dist = int(rng.integers(0, 4))
+                for _ in range(n_dist):
+                    distractions.append({
+                        'intensity': float(rng.random()),
+                        'relevance': float(0.3 + 0.7 * rng.random())
+                    })
+
+                task = {'importance': float(np.clip(task_importance + rng.normal(0, 0.1), 0.1, 1.0))}
+
+                att = self.disorder_engines['attention'].maintain_attention(
+                    task=task,
+                    distractions=distractions,
+                    time_elapsed=t
+                )
+
+                # 충동 과제 (즉각 vs 지연)
+                r2 = self.rng.get_rng('adhd_reward')
+                immediate = float(0.2 + 0.8 * r2.random())
+                delayed = float(immediate + 0.1 + 0.8 * r2.random())
+                delay_time = float(5.0 + 55.0 * r2.random())
+
+                imp = self.disorder_engines['impulse'].control_impulse(
+                    immediate_reward=immediate,
+                    delayed_reward=delayed,
+                    delay_time=delay_time,
+                    goal_context={'strength': float(0.2 + 0.6 * r2.random())}
+                )
+
+                # 과잉행동 (에너지)
+                hyper = self.disorder_engines['hyperactivity'].calculate_hyperactivity(
+                    current_energy=current_energy,
+                    task_demand=task.get('importance', 0.5),
+                    time_elapsed=t
+                )
+                current_energy = hyper['next_energy']
+
+                # 기록
+                self.simulation_data['timestamps'].append(t)
+                self.simulation_data['attention_scores'].append(att['attention_score'])
+                self.simulation_data['impulse_scores'].append(imp['impulse_score'])
+                self.simulation_data['hyperactivity_scores'].append(hyper['hyperactivity_score'])
+
+                # 루프 기록
+                self.loop_history.append({
+                    'time': t,
+                    'attention_instability_loop': self.active_loops['attention_instability'].get_strength(),
+                    'reward_prediction_error_loop': self.active_loops['reward_prediction_error'].get_strength(),
+                })
+
+        # 결과 요약
+        mean_attention = float(np.mean(self.simulation_data['attention_scores'])) if self.simulation_data['attention_scores'] else 0.0
+        mean_impulse = float(np.mean(self.simulation_data['impulse_scores'])) if self.simulation_data['impulse_scores'] else 0.0
+        mean_hyper = float(np.mean(self.simulation_data['hyperactivity_scores'])) if self.simulation_data['hyperactivity_scores'] else 0.0
+
+        # 간단 패턴 판정
+        overall = 'mild_adhd_like_pattern'
+        if mean_attention < 0.5 and mean_impulse > 0.6:
+            overall = 'adhd_like_pattern'
+
+        results = {
+            'overall_pattern': overall,
+            'mean_attention': mean_attention,
+            'mean_impulsivity': mean_impulse,
+            'mean_hyperactivity': mean_hyper,
+        }
+
+        loop_analysis = self._analyze_loop_combinations()
+        results['loop_analysis'] = loop_analysis
+        self.last_results = results
+
+        print("\n✅ ADHD 시뮬레이션 완료!")
+        print(f"   종합 패턴: {results['overall_pattern']}")
+        print(f"   평균 주의: {results['mean_attention']:.3f}")
+        print(f"   평균 충동성: {results['mean_impulsivity']:.3f}")
+        print(f"   평균 과잉행동: {results['mean_hyperactivity']:.3f}")
+
+        print("\n" + self.explain_patterns(results))
+
+        return results
+
     def simulate_comorbidity(self,
                             disorders: List[str],
                             duration: float = 300.0,
@@ -705,6 +896,37 @@ class UnifiedDisorderSimulator:
                     report_lines.append(f"  • {interaction['description']}")
                 report_lines.append("")
         
+        # Inference state / emergence analysis (research-only)
+        try:
+            age = results.get('age', 18) if isinstance(results, dict) else 18
+            gender_str = results.get('gender', 'male') if isinstance(results, dict) else 'male'
+            from ..medical.normative_data import Gender
+            gender = Gender.MALE if str(gender_str).lower() == 'male' else (Gender.FEMALE if str(gender_str).lower() == 'female' else Gender.OTHER)
+            norm = compute_normative_zscores(results, age=age, gender=gender)
+            axes = compute_optimized_inference_axes(results, loop_analysis=results.get('loop_analysis'))
+            emerg = compute_emergence_index(results, loop_analysis=results.get('loop_analysis'))
+
+            report_lines.append('INFERENCE STATE (Optimized Inference State):')
+            report_lines.append('')
+            report_lines.append(f'  - Homeostasis: {axes.homeostasis:.3f}')
+            report_lines.append(f'  - Signal-to-Noise: {axes.signal_to_noise:.3f}')
+            report_lines.append(f'  - Flexibility: {axes.flexibility:.3f}')
+            report_lines.append(f'  - Motivation: {axes.motivation:.3f}')
+            report_lines.append('')
+            if norm.get('zscores'):
+                report_lines.append('NORMATIVE Z-SCORE (vs control):')
+                for k, z in norm['zscores'].items():
+                    pct = norm['percentiles'].get(k, 50.0)
+                    report_lines.append(f'  - {k}: z={z:.2f} (pct={pct:.1f})')
+                report_lines.append('')
+            report_lines.append('EMERGENCE/COMPENSATION (research-only):')
+            report_lines.append(f"  - stress_index: {emerg['stress_index']:.3f}")
+            report_lines.append(f"  - performance_index: {emerg['performance_index']:.3f}")
+            report_lines.append(f"  - emergence_index: {emerg['emergence_index']:.3f}")
+            report_lines.append('')
+        except Exception:
+            pass
+
         # 패턴 해석
         if 'overall_pattern' in results:
             pattern = results['overall_pattern']
@@ -728,9 +950,37 @@ class UnifiedDisorderSimulator:
                 report_lines.append("     - 에너지 고갈 → 회복 속도 감소 → 수면 저하 → 더 많은 고갈")
                 report_lines.append("     - 에너지가 낮아지면 회복이 더 어려워지는 악순환이 형성됩니다.")
                 report_lines.append("")
+                report_lines.append("  4. 동기 붕괴 루프:")
+                report_lines.append("     - 보상 민감도 감소 → 무쾌감증 → 동기 수준 저하 → 목표 지향 행동 감소 → 보상 기회 감소")
+                report_lines.append("     - 보상에 대한 기대가 낮아지면 동기가 지속적으로 저하되는 악순환이 형성됩니다.")
+                report_lines.append("")
             
+            elif 'adhd' in pattern.lower():
+                report_lines.append("💡 ADHD 패턴의 루프 메커니즘:")
+                report_lines.append("")
+                report_lines.append("  1. 주의 불안정 루프:")
+                report_lines.append("     - 주의 드롭아웃/변동성 증가 → 과제 성과 저하 → 더 잦은 주의 붕괴")
+                report_lines.append("     - 주의가 흔들릴수록 목표 유지가 어려워지고 드롭아웃이 반복됩니다.")
+                report_lines.append("")
+                report_lines.append("  2. 보상 예측 오차(RPE) 루프:")
+                report_lines.append("     - 예측 오차 증가 → 학습 왜곡/불안정 → 즉각 보상 선호 증가 → 오차 패턴 강화")
+                report_lines.append("     - 보상 신호가 불안정하면 충동적 선택이 강화될 수 있습니다.")
+                report_lines.append("")
+
             elif 'ptsd' in pattern.lower():
                 report_lines.append("💡 PTSD 패턴의 루프 메커니즘:")
+                report_lines.append("")
+                report_lines.append("  1. 침입 기억 루프:")
+                report_lines.append("     - 외상 기억 강화 → 억제 실패 → 침입 발생 → 공포 반응 → 기억 더 강화")
+                report_lines.append("     - 외상 기억이 강화되면 억제가 더 어려워지고 침입이 지속적으로 발생합니다.")
+                report_lines.append("")
+                report_lines.append("  2. 회피 강화 루프:")
+                report_lines.append("     - 회피 학습 → 단기 불안 감소 → 회피 강화 → 노출 기회 감소 → 회피 더 강화")
+                report_lines.append("     - 회피가 단기적으로는 불안을 감소시키지만 장기적으로는 문제를 유지합니다.")
+                report_lines.append("")
+                report_lines.append("  3. 과각성 루프:")
+                report_lines.append("     - 위협 감지 → 각성 증가 → 수면 저하 → 더 많은 위협 감지")
+                report_lines.append("     - 각성이 높아지면 모든 자극이 위협으로 인식되어 과각성이 지속됩니다.")
                 report_lines.append("")
                 report_lines.append("  1. 과각성 루프:")
                 report_lines.append("     - 위협 감지 → 각성 증가 → 수면 저하 → 더 많은 위협 감지")
@@ -800,6 +1050,67 @@ class UnifiedDisorderSimulator:
                     'type': 'reinforcement',
                     'loops': ['energy_collapse', 'control_failure'],
                     'description': '에너지 붕괴로 인한 인지 제어 약화 패턴 관측'
+                })
+        
+        # 동기 붕괴 루프와 에너지 붕괴 루프의 상호작용
+        if 'motivation_collapse' in active_loops and 'energy_collapse' in active_loops:
+            mc_strength = active_loops['motivation_collapse']['mean_strength']
+            ec_strength = active_loops['energy_collapse']['mean_strength']
+            
+            if mc_strength > 0.3 and ec_strength > 0.2:
+                loop_interactions.append({
+                    'type': 'reinforcement',
+                    'loops': ['motivation_collapse', 'energy_collapse'],
+                    'description': '에너지 고갈로 인한 동기 저하 패턴 관측'
+                })
+        
+        # 동기 붕괴 루프와 부정적 편향 루프의 상호작용
+        if 'motivation_collapse' in active_loops and 'negative_bias' in active_loops:
+            mc_strength = active_loops['motivation_collapse']['mean_strength']
+            nb_strength = active_loops['negative_bias']['mean_strength']
+            
+            if mc_strength > 0.3 and nb_strength > 0.3:
+                loop_interactions.append({
+                    'type': 'reinforcement',
+                    'loops': ['motivation_collapse', 'negative_bias'],
+                    'description': '부정적 편향으로 인한 보상 기대 감소 → 동기 저하 패턴 관측'
+                })
+        
+        # PTSD 루프 간 상호작용
+        # 침입 기억 루프와 회피 강화 루프의 상호작용
+        if 'intrusive_memory' in active_loops and 'avoidance' in active_loops:
+            im_strength = active_loops['intrusive_memory']['mean_strength']
+            av_strength = active_loops['avoidance']['mean_strength']
+            
+            if im_strength > 0.3 and av_strength > 0.3:
+                loop_interactions.append({
+                    'type': 'reinforcement',
+                    'loops': ['intrusive_memory', 'avoidance'],
+                    'description': '침입 기억 발생 → 회피 강화 → 노출 기회 감소 → 침입 더 강화 패턴 관측'
+                })
+        
+        # ADHD 루프 간 상호작용
+        if 'attention_instability' in active_loops and 'reward_prediction_error' in active_loops:
+            ai_strength = active_loops['attention_instability']['mean_strength']
+            rpe_strength = active_loops['reward_prediction_error']['mean_strength']
+            
+            if ai_strength > 0.3 and rpe_strength > 0.3:
+                loop_interactions.append({
+                    'type': 'reinforcement',
+                    'loops': ['attention_instability', 'reward_prediction_error'],
+                    'description': '주의 불안정으로 과제 성과 저하 → 보상 예측 오차 증가 → 충동적 선택 강화 패턴 관측'
+                })
+
+        # 침입 기억 루프와 과각성 루프의 상호작용 (HyperarousalLoop가 있다면)
+        if 'intrusive_memory' in active_loops and 'hyperarousal' in active_loops:
+            im_strength = active_loops['intrusive_memory']['mean_strength']
+            ha_strength = active_loops['hyperarousal']['mean_strength']
+            
+            if im_strength > 0.3 and ha_strength > 0.3:
+                loop_interactions.append({
+                    'type': 'reinforcement',
+                    'loops': ['intrusive_memory', 'hyperarousal'],
+                    'description': '침입 발생 → 각성 증가 → 더 많은 침입 감지 패턴 관측'
                 })
         
         return {

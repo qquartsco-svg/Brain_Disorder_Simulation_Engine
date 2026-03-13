@@ -9,6 +9,8 @@ PTSD 특화 엔진
 3. 과각성 (Hyperarousal Engine)
 4. 부정적 인지 변화 (Negative Cognition Engine)
 
+⚠️ 리팩터링: IntrusiveMemoryEngine과 AvoidanceEngine은 내부적으로 루프 라이브러리를 사용합니다.
+
 연구 근거:
 - Brewin et al. (2000) - Dual representation theory
 - Ehlers & Clark (2000) - Cognitive model of PTSD
@@ -27,16 +29,15 @@ import numpy as np
 from typing import Dict, Optional, List, Tuple
 from dataclasses import dataclass
 
+# 루프 라이브러리 import
+from ...common.loops import (
+    IntrusiveMemoryLoop,
+    AvoidanceReinforcementLoop
+)
 
-@dataclass
-class TraumaticMemory:
-    """외상 기억 데이터 구조"""
-    memory_id: str
-    intensity: float  # 0.0 ~ 1.0
-    frequency: float  # 침입 빈도
-    associated_fear: float  # 연관된 공포 수준
-    suppression_attempts: int  # 억제 시도 횟수
-    suppression_success: float  # 억제 성공률
+
+# TraumaticMemory는 루프 라이브러리에서 import
+from ...common.loops.intrusive_memory_loop import TraumaticMemory
 
 
 class IntrusiveMemoryEngine:
@@ -49,23 +50,37 @@ class IntrusiveMemoryEngine:
     - Amygdala: 공포 반응 강화
     """
     
-    def __init__(self, rng: Optional[np.random.Generator] = None):
+    def __init__(self, 
+                 initial_trauma_intensity: float = 0.0,
+                 initial_suppression_failure: float = 0.3,
+                 rng: Optional[np.random.Generator] = None):
         """
         외상 기억 침입 엔진 초기화
         
         Args:
+            initial_trauma_intensity: 초기 외상 강도 (0.0 ~ 1.0)
+            initial_suppression_failure: 초기 억제 실패율 (0.0 ~ 1.0)
             rng: 난수 생성기
         """
         self.rng = rng if rng is not None else np.random.default_rng()
-        self.traumatic_memories: List[TraumaticMemory] = []
         
-        # 동역학 파라미터
-        self.memory_consolidation_rate = 0.1  # 기억 강화율
-        self.suppression_failure_rate = 0.3  # 억제 실패율
-        self.intrusion_threshold = 0.5  # 침입 임계값
-        self.fear_amplification = 1.5  # 공포 증폭 인자
+        # 루프 라이브러리 사용
+        self.loop = IntrusiveMemoryLoop(
+            initial_trauma_intensity=initial_trauma_intensity,
+            initial_suppression_failure=initial_suppression_failure,
+            rng=rng
+        )
         
-        # 상태
+        # 호환성을 위한 속성 (루프에서 가져오기)
+        self.traumatic_memories = self.loop.intrusion_state.traumatic_memories
+        
+        # 동역학 파라미터 (호환성 유지)
+        self.memory_consolidation_rate = 0.1
+        self.suppression_failure_rate = self.loop.intrusion_state.suppression_failure
+        self.intrusion_threshold = self.loop.intrusion_threshold
+        self.fear_amplification = self.loop.fear_amplification
+        
+        # 상태 (호환성 유지)
         self.current_intrusion_level = 0.0
         self.suppression_attempts = 0
         self.suppression_success_rate = 0.5
@@ -82,15 +97,15 @@ class IntrusiveMemoryEngine:
             initial_intensity: 초기 강도
             initial_fear: 초기 공포 수준
         """
-        memory = TraumaticMemory(
+        # 루프를 통해 외상 기억 추가
+        self.loop.add_traumatic_memory(
             memory_id=memory_id,
-            intensity=np.clip(initial_intensity, 0.0, 1.0),
-            frequency=0.0,
-            associated_fear=np.clip(initial_fear, 0.0, 1.0),
-            suppression_attempts=0,
-            suppression_success=0.5
+            initial_intensity=initial_intensity,
+            initial_fear=initial_fear
         )
-        self.traumatic_memories.append(memory)
+        
+        # 호환성 유지
+        self.traumatic_memories = self.loop.intrusion_state.traumatic_memories
     
     def consolidate_memory(self, memory_id: str, factor: float = 0.1):
         """
@@ -104,6 +119,8 @@ class IntrusiveMemoryEngine:
             memory_id: 기억 식별자
             factor: 강화 인자
         """
+        # 루프를 통해 기억 강화 (동역학 업데이트로 처리)
+        # 호환성을 위해 직접 수정도 지원
         for memory in self.traumatic_memories:
             if memory.memory_id == memory_id:
                 # 기억 강도 증가
@@ -116,6 +133,9 @@ class IntrusiveMemoryEngine:
                     memory.associated_fear + factor * 0.5,
                     0.0, 1.0
                 )
+                # 루프 강도 업데이트
+                if memory.intensity > self.loop.state.loop_strength:
+                    self.loop.state.loop_strength = memory.intensity
                 break
     
     def attempt_suppression(self, memory_id: str, pfc_control: float) -> bool:
@@ -133,30 +153,14 @@ class IntrusiveMemoryEngine:
         Returns:
             억제 성공 여부
         """
-        for memory in self.traumatic_memories:
-            if memory.memory_id == memory_id:
-                memory.suppression_attempts += 1
-                
-                # PFC 제어 능력에 따른 억제 성공률
-                suppression_prob = pfc_control * (1.0 - self.suppression_failure_rate)
-                
-                success = self.rng.random() < suppression_prob
-                
-                if success:
-                    memory.suppression_success = np.clip(
-                        memory.suppression_success + 0.1,
-                        0.0, 1.0
-                    )
-                else:
-                    # 억제 실패 시 침입 발생
-                    memory.frequency += 0.2
-                    memory.suppression_success = np.clip(
-                        memory.suppression_success - 0.1,
-                        0.0, 1.0
-                    )
-                
-                return success
-        return False
+        # 루프를 통해 억제 시도
+        success = self.loop.attempt_suppression(memory_id, pfc_control)
+        
+        # 호환성 유지
+        self.suppression_attempts = self.loop.intrusion_state.suppression_attempts
+        self.suppression_failure_rate = self.loop.intrusion_state.suppression_failure
+        
+        return success
     
     def compute_intrusion(self, amygdala_arousal: float) -> float:
         """
@@ -172,30 +176,13 @@ class IntrusiveMemoryEngine:
         Returns:
             침입 수준 (0.0 ~ 1.0)
         """
-        if not self.traumatic_memories:
-            return 0.0
+        # 루프를 통해 침입 수준 계산
+        intrusion_level = self.loop.compute_intrusion(amygdala_arousal)
         
-        # 각 기억의 침입 기여도 계산
-        intrusion_contributions = []
-        for memory in self.traumatic_memories:
-            # 기억 강도 × 빈도 × 공포 수준 × Amygdala 각성
-            contribution = (
-                memory.intensity *
-                memory.frequency *
-                memory.associated_fear *
-                amygdala_arousal *
-                self.fear_amplification
-            )
-            intrusion_contributions.append(contribution)
+        # 호환성 유지
+        self.current_intrusion_level = intrusion_level
         
-        # 전체 침입 수준
-        total_intrusion = np.clip(
-            np.mean(intrusion_contributions) if intrusion_contributions else 0.0,
-            0.0, 1.0
-        )
-        
-        self.current_intrusion_level = total_intrusion
-        return total_intrusion
+        return intrusion_level
     
     def update(self, dt: float, amygdala_arousal: float, pfc_control: float):
         """
@@ -206,6 +193,12 @@ class IntrusiveMemoryEngine:
             amygdala_arousal: Amygdala 각성 수준
             pfc_control: PFC 제어 능력
         """
+        # 루프 동역학 업데이트
+        self.loop._update_dynamics(dt, {
+            'amygdala_arousal': amygdala_arousal,
+            'pfc_control': pfc_control
+        })
+        
         # 자동 기억 강화 (시간에 따른)
         for memory in self.traumatic_memories:
             if memory.intensity > self.intrusion_threshold:
@@ -213,6 +206,10 @@ class IntrusiveMemoryEngine:
         
         # 침입 수준 계산
         self.compute_intrusion(amygdala_arousal)
+        
+        # 호환성 유지 (상태 동기화)
+        self.traumatic_memories = self.loop.intrusion_state.traumatic_memories
+        self.suppression_failure_rate = self.loop.intrusion_state.suppression_failure
 
 
 class AvoidanceEngine:
@@ -222,28 +219,42 @@ class AvoidanceEngine:
     메커니즘:
     - Basal Ganglia: 회피 행동 선택
     - PFC: 인지 회피
+    
+    ⚠️ 리팩터링: 이 엔진은 내부적으로 AvoidanceReinforcementLoop를 사용합니다.
     """
     
-    def __init__(self, rng: Optional[np.random.Generator] = None):
+    def __init__(self,
+                 initial_avoidance_strength: float = 0.0,
+                 initial_generalization: float = 0.3,
+                 rng: Optional[np.random.Generator] = None):
         """
         회피 패턴 엔진 초기화
         
         Args:
+            initial_avoidance_strength: 초기 회피 강도 (0.0 ~ 1.0)
+            initial_generalization: 초기 일반화 인자 (0.0 ~ 1.0)
             rng: 난수 생성기
         """
         self.rng = rng if rng is not None else np.random.default_rng()
         
-        # 회피 패턴
-        self.avoided_stimuli: List[str] = []  # 회피된 자극 목록
-        self.avoidance_strength: Dict[str, float] = {}  # 자극별 회피 강도
+        # 루프 라이브러리 사용
+        self.loop = AvoidanceReinforcementLoop(
+            initial_avoidance_strength=initial_avoidance_strength,
+            initial_generalization=initial_generalization,
+            rng=rng
+        )
         
-        # 동역학 파라미터
-        self.avoidance_learning_rate = 0.2  # 회피 학습률
-        self.generalization_factor = 0.3  # 일반화 인자 (유사 자극도 회피)
+        # 호환성을 위한 속성 (루프에서 가져오기)
+        self.avoided_stimuli = self.loop.avoidance_state.avoided_stimuli
+        self.avoidance_strength = self.loop.avoidance_state.avoidance_strength_map
         
-        # 상태
+        # 동역학 파라미터 (호환성 유지)
+        self.avoidance_learning_rate = self.loop.avoidance_learning_rate
+        self.generalization_factor = self.loop.avoidance_state.generalization_factor
+        
+        # 상태 (호환성 유지)
         self.current_avoidance_level = 0.0
-        self.emotional_numbing = 0.0  # 감정적 마비
+        self.emotional_numbing = 0.0
         
     def learn_avoidance(self, stimulus: str, fear_level: float):
         """
@@ -257,22 +268,15 @@ class AvoidanceEngine:
             stimulus: 자극 식별자
             fear_level: 공포 수준
         """
-        if stimulus not in self.avoided_stimuli:
-            self.avoided_stimuli.append(stimulus)
+        # 루프를 통해 회피 학습
+        self.loop.learn_avoidance(stimulus, fear_level)
         
-        # 회피 강도 업데이트
-        current_strength = self.avoidance_strength.get(stimulus, 0.0)
-        new_strength = np.clip(
-            current_strength + self.avoidance_learning_rate * fear_level,
-            0.0, 1.0
-        )
-        self.avoidance_strength[stimulus] = new_strength
-        
-        # 감정적 마비 증가 (회피가 지속될수록)
-        self.emotional_numbing = np.clip(
-            self.emotional_numbing + 0.05 * fear_level,
-            0.0, 1.0
-        )
+        # 호환성 유지 (상태 동기화)
+        self.avoided_stimuli = self.loop.avoidance_state.avoided_stimuli
+        self.avoidance_strength = self.loop.avoidance_state.avoidance_strength_map
+        self.current_avoidance_level = self.loop.avoidance_state.current_avoidance_level
+        self.emotional_numbing = self.loop.avoidance_state.emotional_numbing
+        self.generalization_factor = self.loop.avoidance_state.generalization_factor
     
     def check_avoidance(self, stimulus: str) -> Tuple[bool, float]:
         """
@@ -284,38 +288,8 @@ class AvoidanceEngine:
         Returns:
             (회피 여부, 회피 강도)
         """
-        # 직접 회피
-        if stimulus in self.avoided_stimuli:
-            strength = self.avoidance_strength.get(stimulus, 0.0)
-            return True, strength
-        
-        # 일반화된 회피 (유사 자극)
-        for avoided in self.avoided_stimuli:
-            similarity = self._compute_similarity(stimulus, avoided)
-            if similarity > (1.0 - self.generalization_factor):
-                strength = self.avoidance_strength.get(avoided, 0.0) * similarity
-                return True, strength
-        
-        return False, 0.0
-    
-    def _compute_similarity(self, s1: str, s2: str) -> float:
-        """
-        자극 유사도 계산 (간단한 구현)
-        
-        Args:
-            s1, s2: 자극 식별자
-            
-        Returns:
-            유사도 (0.0 ~ 1.0)
-        """
-        # 간단한 문자열 유사도 (실제로는 의미적 유사도 사용)
-        if s1 == s2:
-            return 1.0
-        
-        # 공통 부분 기반
-        common_chars = sum(1 for c in s1 if c in s2)
-        max_len = max(len(s1), len(s2))
-        return common_chars / max_len if max_len > 0 else 0.0
+        # 루프를 통해 회피 확인
+        return self.loop.check_avoidance(stimulus)
     
     def compute_avoidance_level(self) -> float:
         """
@@ -324,12 +298,30 @@ class AvoidanceEngine:
         Returns:
             회피 수준 (0.0 ~ 1.0)
         """
-        if not self.avoidance_strength:
-            return 0.0
+        # 루프를 통해 회피 수준 계산
+        avoidance_level = self.loop.compute_avoidance_level()
         
-        avg_strength = np.mean(list(self.avoidance_strength.values()))
-        self.current_avoidance_level = avg_strength
-        return avg_strength
+        # 호환성 유지
+        self.current_avoidance_level = avoidance_level
+        
+        return avoidance_level
+    
+    def update(self, dt: float):
+        """
+        엔진 업데이트 (시간 경과에 따른 동역학)
+        
+        Args:
+            dt: 시간 간격
+        """
+        # 루프 동역학 업데이트
+        self.loop._update_dynamics(dt=dt)
+        
+        # 호환성 유지 (상태 동기화)
+        self.avoided_stimuli = self.loop.avoidance_state.avoided_stimuli
+        self.avoidance_strength = self.loop.avoidance_state.avoidance_strength_map
+        self.current_avoidance_level = self.loop.avoidance_state.current_avoidance_level
+        self.emotional_numbing = self.loop.avoidance_state.emotional_numbing
+        self.generalization_factor = self.loop.avoidance_state.generalization_factor
 
 
 class HyperarousalEngine:

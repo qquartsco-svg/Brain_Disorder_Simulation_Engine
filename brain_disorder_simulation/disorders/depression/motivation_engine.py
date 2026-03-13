@@ -2,11 +2,16 @@
 동기 엔진 (우울증 전용)
 
 우울증 특화: 동기 감소 및 무쾌감증 메커니즘
+
+⚠️ 리팩터링: 이 엔진은 내부적으로 MotivationCollapseLoop를 사용합니다.
 """
 
 import numpy as np
 from typing import Dict, Optional
 from dataclasses import dataclass
+
+# 루프 라이브러리 import
+from ...common.loops import MotivationCollapseLoop
 
 
 @dataclass
@@ -46,33 +51,36 @@ class MotivationEngine:
         self.motivation_deficit = np.clip(motivation_deficit, 0.0, 1.0)
         self.rng = rng if rng is not None else np.random.default_rng()
         
-        # 상태 초기화
+        # 루프 라이브러리 사용
+        self.loop = MotivationCollapseLoop(
+            initial_motivation_deficit=motivation_deficit,
+            rng=rng
+        )
+        
+        # 상태 초기화 (호환성 유지)
         self.state = MotivationState()
         
         # 파라미터
         self.base_reward_sensitivity = 1.0
         
         # 초기 상태 설정
-        self._update_state_from_deficit()
+        self._update_state_from_loop()
     
-    def _update_state_from_deficit(self):
-        """결핍 정도에 따라 상태 업데이트"""
-        deficit = self.motivation_deficit
+    def _update_state_from_loop(self):
+        """루프에서 상태 동기화 (호환성 유지)"""
+        loop_state = self.loop.get_state()
         
-        # 보상 민감도 감소 (1.0 ~ 0.3)
-        self.state.reward_sensitivity = 1.0 - (deficit * 0.7)
+        # 루프 상태를 엔진 상태로 동기화
+        self.state.reward_sensitivity = loop_state.reward_sensitivity
+        self.state.motivation_level = loop_state.motivation_level
+        self.state.goal_directed_behavior = loop_state.goal_directed_behavior
+        self.state.anhedonia = loop_state.anhedonia
+        self.state.effort_cost = loop_state.effort_cost
         
-        # 동기 수준 저하 (1.0 ~ 0.2)
-        self.state.motivation_level = 1.0 - (deficit * 0.8)
-        
-        # 목표 지향 행동 감소 (1.0 ~ 0.3)
-        self.state.goal_directed_behavior = 1.0 - (deficit * 0.7)
-        
-        # 무쾌감증 (0.0 ~ 0.8)
-        self.state.anhedonia = deficit * 0.8
-        
-        # 노력 비용 증가 (1.0 ~ 2.5)
-        self.state.effort_cost = 1.0 + (deficit * 1.5)
+        # 루프 강도 업데이트
+        loop_strength = self.loop.get_strength()
+        if loop_strength > 0:
+            self.motivation_deficit = loop_strength
     
     def process_reward(self,
                       reward_value: float,
@@ -87,39 +95,16 @@ class MotivationEngine:
         Returns:
             보상 처리 결과
         """
-        # 보상 민감도 적용
-        perceived_reward = reward_value * self.state.reward_sensitivity
+        # 루프를 통해 보상 처리
+        result = self.loop.process_reward(
+            reward_value=reward_value,
+            effort_required=effort_required
+        )
         
-        # 무쾌감증 적용 (보상에 대한 즐거움 감소)
-        pleasure = perceived_reward * (1.0 - self.state.anhedonia)
+        # 상태 동기화
+        self._update_state_from_loop()
         
-        # 노력 비용 계산
-        effort_cost = effort_required * self.state.effort_cost
-        
-        # 동기 계산 (보상 - 비용)
-        motivation_gain = pleasure - effort_cost
-        
-        # 동기 업데이트
-        if motivation_gain > 0:
-            self.state.motivation_level = min(1.0,
-                self.state.motivation_level + motivation_gain * 0.1)
-        else:
-            # 비용이 더 크면 동기 감소
-            self.state.motivation_level = max(0.0,
-                self.state.motivation_level + motivation_gain * 0.1)
-        
-        # 목표 지향 행동 가능 여부
-        can_engage = (self.state.motivation_level > 0.3 and 
-                     motivation_gain > -0.2)
-        
-        return {
-            'perceived_reward': perceived_reward,
-            'pleasure': pleasure,
-            'effort_cost': effort_cost,
-            'motivation_gain': motivation_gain,
-            'can_engage': can_engage,
-            'anhedonia_effect': self.state.anhedonia
-        }
+        return result
     
     def evaluate_action(self,
                        expected_reward: float,
@@ -136,31 +121,17 @@ class MotivationEngine:
         Returns:
             행동 평가 결과
         """
-        # 보상 민감도 적용
-        perceived_reward = expected_reward * self.state.reward_sensitivity
+        # 루프를 통해 행동 평가
+        result = self.loop.evaluate_action(
+            expected_reward=expected_reward,
+            effort_required=effort_required,
+            delay=delay
+        )
         
-        # 무쾌감증 적용
-        pleasure = perceived_reward * (1.0 - self.state.anhedonia)
+        # 상태 동기화
+        self._update_state_from_loop()
         
-        # 노력 비용
-        effort_cost = effort_required * self.state.effort_cost
-        
-        # 지연 할인 (시간이 지날수록 보상 가치 감소)
-        delay_discount = np.exp(-delay * 0.5)
-        discounted_pleasure = pleasure * delay_discount
-        
-        # 총 가치
-        total_value = discounted_pleasure - effort_cost
-        
-        # 행동 결정
-        should_act = total_value > 0.0 and self.state.motivation_level > 0.2
-        
-        return {
-            'total_value': total_value,
-            'should_act': should_act,
-            'motivation_sufficient': self.state.motivation_level > 0.3,
-            'goal_directed': self.state.goal_directed_behavior > 0.5
-        }
+        return result
     
     def get_motivation_score(self) -> float:
         """
@@ -169,12 +140,22 @@ class MotivationEngine:
         Returns:
             동기 점수 (낮을수록 동기 결핍)
         """
-        score = (
-            self.state.reward_sensitivity * 0.3 +
-            self.state.motivation_level * 0.3 +
-            self.state.goal_directed_behavior * 0.2 +
-            (1.0 - self.state.anhedonia) * 0.1 +
-            (2.0 - self.state.effort_cost) / 1.5 * 0.1
-        )
-        return np.clip(score, 0.0, 1.0)
+        # 상태 동기화
+        self._update_state_from_loop()
+        
+        # 루프를 통해 동기 점수 계산
+        return self.loop.get_motivation_score()
+    
+    def update(self, dt: float):
+        """
+        엔진 업데이트 (시간 경과에 따른 동역학)
+        
+        Args:
+            dt: 시간 간격
+        """
+        # 루프 동역학 업데이트
+        self.loop._update_dynamics(dt=dt)
+        
+        # 상태 동기화
+        self._update_state_from_loop()
 

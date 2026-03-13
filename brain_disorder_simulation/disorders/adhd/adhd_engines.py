@@ -7,6 +7,12 @@ ADHD 특화 엔진
 import numpy as np
 import time
 from typing import Dict, List, Optional, Tuple
+
+# 루프 라이브러리 import
+from ...common.loops import (
+    AttentionInstabilityLoop,
+    RewardPredictionErrorLoop
+)
 from collections import deque
 
 # 순환 버퍼 (메모리 효율적 히스토리 관리)
@@ -48,6 +54,10 @@ class CircularBuffer:
     def __len__(self) -> int:
         return len(self.buffer)
 
+    def __getitem__(self, idx: int):
+        """인덱싱 지원 (예: buffer[-1])"""
+        return list(self.buffer)[idx]
+
 
 class AttentionControlEngine:
     """
@@ -79,6 +89,18 @@ class AttentionControlEngine:
         self.attention_decay_rate = 0.02  # 주의력 감소율
         self.distraction_sensitivity = 1.5  # 주의 분산 민감도
         self.recovery_rate = 0.01  # 주의력 회복율
+
+        # 의료 기준: 포화/진동 방지 파라미터 (누락 보완)
+        self.min_attention = 0.1
+        self.attention_inertia = 0.8
+        self.recovery_strength = 0.15
+        self.arousal_noise_scale = 0.03
+
+        # 루프 라이브러리 사용 (주의 불안정 루프)
+        self.loop = AttentionInstabilityLoop(
+            initial_instability=0.0,
+            rng=rng
+        )
     
     def calculate_attention(self, task_importance: float, 
                           distractions: List[Dict], 
@@ -100,8 +122,14 @@ class AttentionControlEngine:
         # 기본 주의력 (작업 중요도 기반)
         base_attention = self.attention_level * task_importance
         
+        # 루프 기반 modifier 적용
+        modifiers = self.loop.get_modifiers()
+        decay_rate = self.attention_decay_rate * modifiers['decay_multiplier']
+        distraction_mult = modifiers['distraction_multiplier']
+        noise_sigma = modifiers['noise_sigma']
+
         # 시간에 따른 주의력 감소 (ADHD 특성)
-        time_decay = np.exp(-self.attention_decay_rate * time_elapsed)
+        time_decay = np.exp(-decay_rate * time_elapsed)
         base_attention *= time_decay
         
         # 주의 분산 효과
@@ -109,7 +137,7 @@ class AttentionControlEngine:
         for dist in distractions:
             intensity = dist.get('intensity', 0.0)
             relevance = dist.get('relevance', 0.5)
-            distraction_penalty += intensity * relevance * self.distraction_sensitivity
+            distraction_penalty += intensity * relevance * (self.distraction_sensitivity * distraction_mult)
         
         # 주의력 점수 계산
         attention_score = max(self.min_attention, base_attention - distraction_penalty)
@@ -125,7 +153,7 @@ class AttentionControlEngine:
             attention_score = min(1.0, attention_score + recovery_boost)
         
         # 의료 기준: 무작위 각성 스파이크 (인지적 진동)
-        arousal_spike = self.rng.normal(0.0, self.arousal_noise_scale)
+        arousal_spike = self.rng.normal(0.0, noise_sigma)
         attention_score = np.clip(attention_score + arousal_spike, self.min_attention, 1.0)
         
         return float(attention_score)
@@ -152,7 +180,6 @@ class AttentionControlEngine:
             self.sustained_attention_time += 0.1
         else:
             self.sustained_attention_time = max(0.0, self.sustained_attention_time - 0.2)
-        
         # 히스토리 저장 (CircularBuffer는 자동으로 크기 제한)
         self.attention_history.append(attention_score)
         
@@ -251,6 +278,12 @@ class ImpulseControlEngine:
         # ADHD 특성 파라미터
         self.discount_rate = 0.5  # 시간 할인율 (ADHD는 높음 - 0.5로 증가)
         self.impulse_sensitivity = 1.5  # 충동성 민감도 (1.5로 증가)
+
+        # 루프 라이브러리 사용 (RPE 루프)
+        self.loop = RewardPredictionErrorLoop(
+            initial_rpe_instability=0.0,
+            rng=rng
+        )
     
     def calculate_impulse_preference(self, immediate_reward: float,
                                    delayed_reward: float,
@@ -266,10 +299,14 @@ class ImpulseControlEngine:
         Returns:
             impulse_score: 충동성 점수 (0.0 ~ 1.0)
         """
+        # 루프 기반 modifier 적용
+        rpe_mod = self.loop.get_modifiers()
+        discount_rate = self.discount_rate * rpe_mod['discount_multiplier']
+
         # 시간 할인 (ADHD는 높은 할인율)
         # delay_time을 분 단위로 변환하여 더 현실적인 할인 적용
         delay_minutes = delay_time / 60.0
-        discount_factor = 1.0 / (1.0 + self.discount_rate * delay_minutes)
+        discount_factor = 1.0 / (1.0 + discount_rate * delay_minutes)
         discounted_delayed = delayed_reward * discount_factor
         
         # 즉각적 보상 선호도 계산
@@ -322,7 +359,10 @@ class ImpulseControlEngine:
             impulse_score *= (1.0 - goal_strength * 0.5)
         
         # 충동성 판단
-        is_high_impulsivity = impulse_score > self.impulse_threshold
+        # 루프 기반 임계값 보정
+        rpe_mod = self.loop.get_modifiers()
+        dynamic_threshold = float(np.clip(self.impulse_threshold + rpe_mod['threshold_shift'], 0.1, 0.9))
+        is_high_impulsivity = impulse_score > dynamic_threshold
         
         # 선택 예측 (충동성 점수가 높으면 즉각적 보상 선호)
         # ADHD는 높은 충동성을 가지므로, 점수가 0.3 이상이면 즉각적 보상 선호
@@ -331,6 +371,15 @@ class ImpulseControlEngine:
         else:
             choice = 'delayed_reward'
         
+        # RPE 관측 업데이트 (단순화: 선택한 옵션의 예상/획득 보상 비교)
+        # expected: 두 옵션 중 더 큰 값(할인 반영), received: 선택된 옵션
+        delay_minutes = delay_time / 60.0
+        discount_factor = 1.0 / (1.0 + (self.discount_rate * rpe_mod['discount_multiplier']) * delay_minutes)
+        discounted_delayed = delayed_reward * discount_factor
+        expected = max(immediate_reward, discounted_delayed)
+        received = immediate_reward if choice == 'immediate_reward' else discounted_delayed
+        self.loop.observe(expected_reward=expected, received_reward=received, dt=0.1)
+
         # 히스토리 저장 (CircularBuffer는 자동으로 크기 제한)
         self.impulse_history.append(impulse_score)
         self.choice_history.append(choice)

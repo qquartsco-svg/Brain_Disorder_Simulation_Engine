@@ -8,6 +8,9 @@
 2. HyperarousalLoop - 과각성 루프 (PTSD, 불안장애)
 3. ControlFailureLoop - 제어 실패 루프 (우울증, ADHD)
 4. EnergyCollapseLoop - 에너지 붕괴 루프 (우울증)
+5. MotivationCollapseLoop - 동기 붕괴 루프 (우울증, ADHD, PTSD)
+6. IntrusiveMemoryLoop - 침입 기억 루프 (PTSD, 우울증, 불안장애)
+7. AvoidanceReinforcementLoop - 회피 강화 루프 (PTSD, 불안장애, OCD)
 
 Author: GNJz (Qquarts)
 Version: 1.0.0
@@ -39,6 +42,32 @@ from .energy_collapse_loop import (
     EnergyCollapseLoopState
 )
 
+from .motivation_collapse_loop import (
+    MotivationCollapseLoop,
+    MotivationCollapseLoopState
+)
+
+from .intrusive_memory_loop import (
+    IntrusiveMemoryLoop,
+    IntrusiveMemoryLoopState,
+    TraumaticMemory
+)
+
+from .avoidance_reinforcement_loop import (
+    AvoidanceReinforcementLoop,
+    AvoidanceReinforcementLoopState
+)
+
+from .attention_instability_loop import (
+    AttentionInstabilityLoop,
+    AttentionInstabilityLoopState
+)
+
+from .reward_prediction_error_loop import (
+    RewardPredictionErrorLoop,
+    RewardPredictionErrorLoopState
+)
+
 __all__ = [
     # Base classes
     'BaseLoop',
@@ -60,5 +89,26 @@ __all__ = [
     # Energy Collapse Loop
     'EnergyCollapseLoop',
     'EnergyCollapseLoopState',
+    
+    # Motivation Collapse Loop
+    'MotivationCollapseLoop',
+    'MotivationCollapseLoopState',
+    
+    # Intrusive Memory Loop
+    'IntrusiveMemoryLoop',
+    'IntrusiveMemoryLoopState',
+    'TraumaticMemory',
+    
+    # Avoidance Reinforcement Loop
+    'AvoidanceReinforcementLoop',
+    'AvoidanceReinforcementLoopState',
+
+    # Attention Instability Loop
+    'AttentionInstabilityLoop',
+    'AttentionInstabilityLoopState',
+
+    # Reward Prediction Error Loop
+    'RewardPredictionErrorLoop',
+    'RewardPredictionErrorLoopState',
 ]
 
